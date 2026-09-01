@@ -1,0 +1,53 @@
+KASSAPRINTER TOEVOEGEN AAN HET PERSONEELSSCHERM
+=================================================
+
+In deze zip zitten 2 bestanden. Sleep ze allebei naar de root van je
+repo (indianflavors-personeelsscherm) op GitHub, zodat ze index.html
+vervangen resp. toevoegen:
+
+1. index.html
+   → Dit is je BESTAANDE index.html, ongewijzigd, met alleen deze
+     regel toegevoegd vlak vóór </body>:
+       <script src="/print-kassabon.js"></script>
+     Upload dit bestand met "Add file" → "Upload files" en laat het
+     de huidige index.html overschrijven.
+
+2. print-kassabon.js
+   → Nieuw bestand, zet het in de root naast index.html (dus NIET
+     in een submap).
+
+NA HET UPLOADEN
+----------------
+Zodra beide bestanden live staan (GitHub Pages / je hosting update
+automatisch na een paar seconden/minuten), kun je vanuit je eigen
+code overal in het scherm printen met:
+
+  window.printOrder({
+    id: "1234",
+    table: "Tafel 5",
+    items: [
+      { name: "Chicken Tikka Masala", qty: 2, price: 14.50 },
+      { name: "Naan brood", qty: 1, price: 3.00 }
+    ],
+    total: 32.00
+  });
+
+Dit opent het printdialoogvenster met een kant-en-klaar 80mm-bonnetje
+(pas PAPER_WIDTH_MM boven in print-kassabon.js aan naar 58 als je een
+58mm-rolprinter hebt) en print naar de STANDAARDPRINTER van Windows.
+Zorg dus dat de kassaprinter op die pc als standaard staat ingesteld.
+
+STIL PRINTEN (geen printdialoogvenster)
+-----------------------------------------
+Start Chrome op de kassa-pc met deze snelkoppeling/parameter:
+
+  chrome.exe --kiosk-printing --kiosk https://jouw-personeelsscherm-url
+
+Dan bevestigt Chrome het printen automatisch zonder venster te tonen.
+
+NOG TE DOEN (kun jij zelf, of stuur me het stukje code)
+----------------------------------------------------------
+Ik zie de eigenlijke bestel-rendering niet (zit verstopt in de
+geminifiede bundel), dus de "Print bon"-knop en de aanroep van
+window.printOrder(...) met de juiste bestelgegevens moet je zelf
+koppelen aan je bestaande order-data.
