@@ -76,31 +76,35 @@
               margin: 0;
               padding: 6mm 4mm;
               font-family: "Courier New", monospace;
-              font-size: 12px;
+              font-size: 16px;
+              font-weight: bold;
               color: #000;
             }
             h1 {
-              font-size: 15px;
+              font-size: 22px;
+              font-weight: bold;
               text-align: center;
-              margin: 0 0 4px;
+              margin: 0 0 5px;
             }
             .meta {
               text-align: center;
-              font-size: 11px;
-              margin-bottom: 8px;
+              font-size: 14px;
+              font-weight: bold;
+              margin-bottom: 10px;
             }
             hr {
               border: none;
               border-top: 1px dashed #000;
-              margin: 6px 0;
+              margin: 8px 0;
             }
             table {
               width: 100%;
               border-collapse: collapse;
             }
             td {
-              padding: 2px 0;
+              padding: 4px 0;
               vertical-align: top;
+              font-weight: bold;
             }
             td.qty { width: 12%; }
             td.name { width: 60%; }
@@ -109,18 +113,20 @@
               display: flex;
               justify-content: space-between;
               font-weight: bold;
-              font-size: 14px;
-              margin-top: 8px;
+              font-size: 19px;
+              margin-top: 10px;
             }
             .note {
-              margin-top: 8px;
-              font-size: 11px;
+              margin-top: 10px;
+              font-size: 14px;
+              font-weight: bold;
               font-style: italic;
             }
             .footer {
               text-align: center;
-              margin-top: 10px;
-              font-size: 11px;
+              margin-top: 12px;
+              font-size: 14px;
+              font-weight: bold;
             }
           </style>
         </head>
