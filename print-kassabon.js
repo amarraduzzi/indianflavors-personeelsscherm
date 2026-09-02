@@ -44,8 +44,8 @@
     );
     const total = order.total != null ? order.total : computedTotal;
     const now = new Date();
-    const dateStr = now.toLocaleDateString("nl-NL");
-    const timeStr = now.toLocaleTimeString("nl-NL", {
+    const dateStr = now.toLocaleDateString("fr-FR");
+    const timeStr = now.toLocaleTimeString("fr-FR", {
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -142,11 +142,11 @@
           </table>
           <hr />
           <div class="total-row">
-            <span>TOTAAL</span>
+            <span>TOTAL</span>
             <span>${formatPrice(total)}</span>
           </div>
-          ${order.note ? `<div class="note">Opmerking: ${escapeHtml(order.note)}</div>` : ""}
-          <div class="footer">Bedankt!</div>
+          ${order.note ? `<div class="note">Remarque : ${escapeHtml(order.note)}</div>` : ""}
+          <div class="footer">Merci !</div>
         </body>
       </html>`;
   }
