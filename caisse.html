@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Indian Flavors — Caisse</title>
+<title>Indian Flavors — POS</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍛</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,8 +38,6 @@
   .report-btn.manual{color:var(--gold-light);border-color:var(--gold);}
   .report-btn.glovo-prices{color:#ffc244;border-color:#8a6a1f;}
   .report-btn.glovo-prices:hover{color:#ffc244;border-color:#ffc244;}
-  .report-btn.purchase{color:var(--green);border-color:#2f6b4f;}
-  .report-btn.purchase:hover{color:var(--green);border-color:var(--green);}
   .range-field{
     display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dimmer);
     text-transform:uppercase;letter-spacing:.05em;
@@ -226,94 +224,93 @@
     <div class="brand">
       <div>
         <div class="brand-title">Indian Flavors</div>
-        <div class="brand-sub">Caisse</div>
+        <div class="brand-sub">POS</div>
       </div>
     </div>
     <div class="header-actions">
       <div class="range-field">
-        <label>Du</label>
+        <label>From</label>
         <input type="date" id="rangeFrom" />
-        <label>Au</label>
+        <label>To</label>
         <input type="date" id="rangeTo" />
       </div>
-      <button class="report-btn" id="btnReportX">Rapport X</button>
-      <button class="report-btn z" id="btnReportZ">Rapport Z</button>
+      <button class="report-btn" id="btnReportX">X Report</button>
+      <button class="report-btn z" id="btnReportZ">Z Report</button>
       <button class="report-btn" id="btnExportCsv">Export CSV</button>
-      <button class="report-btn manual" id="btnManualEntry">+ Saisie manuelle</button>
-      <button class="report-btn glovo-prices" id="btnGlovoPrices">Prix Glovo</button>
-      <button class="report-btn purchase" id="btnPurchaseReport">Achats théoriques</button>
-      <a class="back-link" href="index.html">&larr; Retour au tableau</a>
+      <button class="report-btn manual" id="btnManualEntry">+ Manual Entry</button>
+      <button class="report-btn glovo-prices" id="btnGlovoPrices">Glovo Prices</button>
+      <a class="back-link" href="index.html">&larr; Back to dashboard</a>
     </div>
   </header>
 
   <main id="main" style="display:none;">
     <section class="catalog">
       <div class="toolbar">
-        <input class="search-input" id="search" placeholder="Rechercher un plat..." />
+        <input class="search-input" id="search" placeholder="Search a dish..." />
       </div>
       <div class="toolbar" id="categories"></div>
       <div class="grid" id="grid"></div>
-      <div class="empty-msg" id="emptyMsg" style="display:none;">Aucun plat trouvé</div>
+      <div class="empty-msg" id="emptyMsg" style="display:none;">No dish found</div>
     </section>
 
     <aside class="cart">
       <div class="cart-header">
-        <div class="cart-title">Nouvelle commande</div>
+        <div class="cart-title">New Order</div>
         <div class="channel-toggle">
           <div class="channel-btn active" data-channel="restaurant" id="chRestaurant">Restaurant</div>
           <div class="channel-btn glovo" data-channel="glovo" id="chGlovo">Glovo</div>
         </div>
         <div class="type-row" id="typeRow">
-          <div class="type-btn active" data-type="dinein">Sur place</div>
-          <div class="type-btn" data-type="takeaway">À emporter</div>
-          <div class="type-btn" data-type="delivery">Livraison</div>
+          <div class="type-btn active" data-type="dinein">Dine-in</div>
+          <div class="type-btn" data-type="takeaway">Takeaway</div>
+          <div class="type-btn" data-type="delivery">Delivery</div>
         </div>
         <div class="field" id="tableField">
-          <label>Table / repère</label>
-          <input id="tableInput" placeholder="ex : Table 5" />
+          <label>Table / reference</label>
+          <input id="tableInput" placeholder="e.g. Table 5" />
         </div>
         <div class="field" id="glovoNameField" style="display:none;">
-          <label>Nom client (Glovo)</label>
-          <input id="glovoNameInput" placeholder="ex : Youssef B." />
+          <label>Customer name (Glovo)</label>
+          <input id="glovoNameInput" placeholder="e.g. Youssef B." />
         </div>
         <div class="field">
-          <label>Remarque</label>
-          <textarea id="notesInput" placeholder="ex : sans piment, allergie..."></textarea>
+          <label>Note</label>
+          <textarea id="notesInput" placeholder="e.g. no chili, allergy..."></textarea>
         </div>
         <div class="field">
-          <label>Mode de paiement</label>
+          <label>Payment method</label>
           <div class="payment-toggle">
-            <div class="payment-btn active" data-payment="cash" id="payCash">Espèces</div>
-            <div class="payment-btn" data-payment="card" id="payCard">Carte bancaire</div>
+            <div class="payment-btn active" data-payment="cash" id="payCash">Cash</div>
+            <div class="payment-btn" data-payment="card" id="payCard">Card</div>
           </div>
         </div>
       </div>
 
       <div class="cart-items" id="cartItems">
-        <div class="cart-empty">Aucun article ajouté</div>
+        <div class="cart-empty">No items added</div>
       </div>
 
       <div class="cart-footer">
         <div class="total-row">
-          <span class="total-label">TOTAL (TTC)</span>
-          <span class="total-value" id="totalValue">0,00 DH</span>
+          <span class="total-label">TOTAL (incl. VAT)</span>
+          <span class="total-value" id="totalValue">0.00 DH</span>
         </div>
-        <div class="vat-breakdown" id="vatBreakdown">dont TVA (10%) : 0,00 DH · HT : 0,00 DH</div>
-        <button class="submit-btn" id="submitBtn" disabled>Envoyer la commande</button>
+        <div class="vat-breakdown" id="vatBreakdown">incl. VAT (10%): 0.00 DH · excl. VAT: 0.00 DH</div>
+        <button class="submit-btn" id="submitBtn" disabled>Send Order</button>
         <label class="print-toggle">
           <input type="checkbox" id="printToggle" checked style="accent-color:var(--gold);" />
-          Imprimer le ticket automatiquement
+          Automatically print receipt
         </label>
       </div>
     </aside>
   </main>
 
-  <div id="lockedMsg" class="locked">Connexion en cours...</div>
+  <div id="lockedMsg" class="locked">Signing in...</div>
   <div class="toast" id="toast"></div>
 
   <div class="modal-overlay" id="reportModal">
     <div class="modal">
-      <h2 id="reportTitle">Rapport</h2>
+      <h2 id="reportTitle">Report</h2>
       <div class="modal-sub" id="reportSub"></div>
       <div id="reportBody"></div>
       <div class="modal-actions" id="reportActions"></div>
@@ -322,15 +319,15 @@
 
   <div class="modal-overlay" id="manualModal">
     <div class="modal wide">
-      <h2>Saisie manuelle</h2>
+      <h2>Manual Entry</h2>
       <div class="modal-sub">
-        Ajoute une commande passée (ex. depuis un ancien ticket de caisse papier), avec sa date
-        exacte, pour qu'elle soit comptée dans les rapports et l'export CSV.
+        Add a past order (e.g. from an old paper POS receipt), with its exact date,
+        so it's counted in the reports and CSV export.
       </div>
 
       <div class="type-row">
-        <div class="type-btn active" data-mode="detail" id="manualModeDetail">Par plat (détaillé)</div>
-        <div class="type-btn" data-mode="total" id="manualModeTotal">Montant total (rapide)</div>
+        <div class="type-btn active" data-mode="detail" id="manualModeDetail">By dish (detailed)</div>
+        <div class="type-btn" data-mode="total" id="manualModeTotal">Total amount (quick)</div>
       </div>
 
       <div class="field-row">
@@ -339,96 +336,96 @@
           <input type="date" id="manualDate" />
         </div>
         <div class="field">
-          <label>Heure</label>
+          <label>Time</label>
           <input type="time" id="manualTime" />
         </div>
       </div>
       <div class="field-row">
         <div class="field">
-          <label>Canal</label>
+          <label>Channel</label>
           <select id="manualChannel">
-            <option value="dinein">Salle (sur place)</option>
-            <option value="takeaway">Comptoir (à emporter)</option>
+            <option value="dinein">Dining room (on-site)</option>
+            <option value="takeaway">Counter (takeaway)</option>
             <option value="delivery-glovo">Glovo</option>
-            <option value="delivery-site">Site web / Livraison</option>
+            <option value="delivery-site">Website / Delivery</option>
           </select>
         </div>
         <div class="field">
-          <label>Mode de paiement</label>
+          <label>Payment method</label>
           <select id="manualPayment">
-            <option value="cash">Espèces</option>
-            <option value="card">Carte bancaire</option>
-            <option value="mixed">Mixte / non renseigné</option>
+            <option value="cash">Cash</option>
+            <option value="card">Card</option>
+            <option value="mixed">Mixed / unspecified</option>
           </select>
         </div>
       </div>
 
       <div id="manualDetailSection">
         <div class="glovo-toolbar">
-          <input id="manualDishSearch" placeholder="Rechercher un plat..." />
+          <input id="manualDishSearch" placeholder="Search a dish..." />
           <span class="glovo-count" id="manualDishCount"></span>
         </div>
         <div class="grid manual-dish-grid" id="manualDishGrid"></div>
-        <div class="empty-msg" id="manualDishEmpty" style="display:none;padding:10px 0;">Aucun plat trouvé pour ce canal</div>
+        <div class="empty-msg" id="manualDishEmpty" style="display:none;padding:10px 0;">No dish found for this channel</div>
 
         <div class="cart-items manual-cart-items" id="manualCartItems">
-          <div class="cart-empty">Aucun article ajouté</div>
+          <div class="cart-empty">No items added</div>
         </div>
         <div class="total-row" style="margin-top:12px;">
-          <span class="total-label">TOTAL (TTC)</span>
-          <span class="total-value" id="manualTotalValue">0,00 DH</span>
+          <span class="total-label">TOTAL (incl. VAT)</span>
+          <span class="total-value" id="manualTotalValue">0.00 DH</span>
         </div>
-        <div class="vat-breakdown" id="manualVatBreakdown">dont TVA (10%) : 0,00 DH · HT : 0,00 DH</div>
+        <div class="vat-breakdown" id="manualVatBreakdown">incl. VAT (10%): 0.00 DH · excl. VAT: 0.00 DH</div>
       </div>
 
       <div id="manualTotalSection" style="display:none;">
         <div class="field">
-          <label>Nombre de commandes</label>
+          <label>Number of orders</label>
           <input type="number" id="manualCount" min="1" value="1" />
         </div>
         <div class="field">
-          <label>Montant total (DH)</label>
-          <input type="number" id="manualAmount" min="0" step="0.01" placeholder="ex : 1250" />
+          <label>Total amount (DH)</label>
+          <input type="number" id="manualAmount" min="0" step="0.01" placeholder="e.g. 1250" />
         </div>
       </div>
 
       <div class="field">
         <label>Description / note</label>
-        <textarea id="manualNote" placeholder="ex : ticket papier n°42, table 3"></textarea>
+        <textarea id="manualNote" placeholder="e.g. paper ticket #42, table 3"></textarea>
       </div>
       <div class="modal-actions">
-        <button class="primary" id="manualSubmitBtn">Ajouter</button>
-        <button id="manualCancelBtn">Fermer</button>
+        <button class="primary" id="manualSubmitBtn">Add</button>
+        <button id="manualCancelBtn">Close</button>
       </div>
     </div>
   </div>
 
   <div class="modal-overlay" id="glovoModal">
     <div class="modal wide">
-      <h2>Prix Glovo</h2>
+      <h2>Glovo Prices</h2>
       <div class="modal-sub">
-        Chaque plat peut avoir un prix différent sur Glovo. Laisse le champ vide
-        pour un plat qui n'est pas vendu sur Glovo — dans ce cas, il n'apparaît
-        pas dans le catalogue quand le canal "Glovo" est sélectionné en caisse.
-        Les modifications sont enregistrées automatiquement.
+        Each dish can have a different price on Glovo. Leave the field empty
+        for a dish that isn't sold on Glovo — in that case, it won't appear
+        in the catalog when the "Glovo" channel is selected at the POS.
+        Changes are saved automatically.
       </div>
       <div class="glovo-toolbar">
-        <input id="glovoSearch" placeholder="Rechercher un plat..." />
+        <input id="glovoSearch" placeholder="Search a dish..." />
         <span class="glovo-count" id="glovoCount"></span>
       </div>
       <table class="glovo-table">
         <thead>
           <tr>
-            <th>Plat</th>
-            <th>Prix restaurant</th>
-            <th>Prix Glovo</th>
+            <th>Dish</th>
+            <th>Restaurant price</th>
+            <th>Glovo price</th>
             <th></th>
           </tr>
         </thead>
         <tbody id="glovoTableBody"></tbody>
       </table>
       <div class="modal-actions">
-        <button id="glovoCloseBtn">Fermer</button>
+        <button id="glovoCloseBtn">Close</button>
       </div>
     </div>
   </div>
@@ -440,10 +437,10 @@
     const SUPABASE_KEY = "sb_publishable_96be9YWDCuHOD9-rmGVkeg_5RTW8Jx7";
     const LAST_Z_KEY = "if_caisse_last_z_close";
 
-    // Tous les montants stockés/affichés dans le système (menu_price,
-    // glovo_price, total des commandes) sont TTC (TVA incluse). Le Maroc
-    // applique un taux de 10% sur la restauration. Ce taux est centralisé
-    // ici : à changer à un seul endroit si le taux évolue un jour.
+    // All amounts stored/displayed in the system (menu_price,
+    // glovo_price, order totals) are VAT-inclusive. Morocco applies
+    // a 10% rate on restaurants. This rate is centralized here: change
+    // it in this one place if it ever changes.
     const VAT_RATE = 0.10;
     function htFromTtc(ttc) {
       return Number(ttc || 0) / (1 + VAT_RATE);
@@ -472,8 +469,8 @@
     let paymentMethod = "cash"; // cash | card
     let cart = []; // [{id, name, price, quantity}]
 
-    // Saisie manuelle (commandes passées, ex. depuis un vieux ticket papier)
-    let manualMode = "detail"; // detail (plat par plat) | total (montant global)
+    // Manual entry (past orders, e.g. from an old paper receipt)
+    let manualMode = "detail"; // detail (dish by dish) | total (lump sum)
     let manualCart = []; // [{id, name, price, quantity}]
 
     function showToast(msg, isError) {
@@ -484,7 +481,7 @@
     }
 
     function money(n) {
-      return Number(n || 0).toFixed(2).replace(".", ",") + " DH";
+      return Number(n || 0).toFixed(2) + " DH";
     }
 
     async function requireAuth() {
@@ -505,19 +502,19 @@
         .order("category")
         .order("name");
       if (error) {
-        showToast("Erreur de chargement du menu", true);
+        showToast("Error loading menu", true);
         return;
       }
       dishes = (data || []).filter((d) => d.menu_price != null);
-      categories = [...new Set(dishes.map((d) => d.category || "Autre"))];
+      categories = [...new Set(dishes.map((d) => d.category || "Other"))];
       renderCategories();
       renderGrid();
     }
 
-    // Prix à utiliser pour un plat selon le canal de vente actif. Sur Glovo,
-    // seuls les plats avec un glovo_price défini sont vendables (les prix
-    // Glovo diffèrent souvent des prix restaurant — voir le bouton "Prix
-    // Glovo" dans l'en-tête pour les configurer).
+    // Price to use for a dish depending on the active sales channel. On
+    // Glovo, only dishes with a glovo_price set are sellable (Glovo prices
+    // often differ from restaurant prices — see the "Glovo Prices" button
+    // in the header to configure them).
     function priceForChannel(dish, ch) {
       if ((ch || channel) === "glovo") return dish.glovo_price;
       return dish.menu_price;
@@ -548,7 +545,7 @@
       const grid = document.getElementById("grid");
       const search = (document.getElementById("search").value || "").toLowerCase().trim();
       const filtered = dishes.filter((d) => {
-        const catOk = activeCategory === "all" || (d.category || "Autre") === activeCategory;
+        const catOk = activeCategory === "all" || (d.category || "Other") === activeCategory;
         const searchOk = !search || d.name.toLowerCase().includes(search);
         return catOk && searchOk;
       });
@@ -561,7 +558,7 @@
         card.className = "dish-card" + (available ? "" : " dish-unavailable");
         const priceHtml = available
           ? `<div class="dish-price${channel === "glovo" ? " glovo-price" : ""}">${money(price)}</div>`
-          : `<div class="dish-price">—</div><div class="dish-flag">Non dispo sur Glovo</div>`;
+          : `<div class="dish-price">—</div><div class="dish-flag">Not available on Glovo</div>`;
         card.innerHTML = `<div class="dish-name">${escapeHtml(d.name)}</div>${priceHtml}`;
         card.disabled = !available;
         card.onclick = () => { if (available) addToCart(d); };
@@ -575,17 +572,17 @@
 
     function addToCart(dish) {
       const price = priceForChannel(dish);
-      if (price == null) return; // pas de prix pour ce canal (ex : pas sur Glovo)
+      if (price == null) return; // no price for this channel (e.g. not on Glovo)
       const line = cart.find((l) => l.id === dish.id);
       if (line) { line.quantity += 1; }
       else { cart.push({ id: dish.id, name: dish.name, price, quantity: 1 }); }
       renderCart();
     }
 
-    // Recalcule le prix de chaque ligne du panier selon le canal actif.
-    // Appelé quand on bascule Restaurant <-> Glovo, pour que le panier
-    // reflète toujours le bon tarif. Un article sans prix sur le nouveau
-    // canal (ex. pas vendu sur Glovo) est retiré du panier.
+    // Recalculates the price of each cart line based on the active channel.
+    // Called when toggling Restaurant <-> Glovo, so the cart always
+    // reflects the right price. An item with no price on the new
+    // channel (e.g. not sold on Glovo) is removed from the cart.
     function resyncCartPrices() {
       cart = cart
         .map((l) => {
@@ -615,7 +612,7 @@
       const wrap = document.getElementById("cartItems");
       wrap.innerHTML = "";
       if (!cart.length) {
-        wrap.innerHTML = '<div class="cart-empty">Aucun article ajouté</div>';
+        wrap.innerHTML = '<div class="cart-empty">No items added</div>';
       } else {
         cart.forEach((l) => {
           const row = document.createElement("div");
@@ -623,7 +620,7 @@
           row.innerHTML = `
             <div style="flex:1;">
               <div class="cart-line-name">${escapeHtml(l.name)}</div>
-              <div class="cart-line-price">${money(l.price)} / unité</div>
+              <div class="cart-line-price">${money(l.price)} / unit</div>
             </div>
             <div class="qty-stepper">
               <div class="qty-btn" data-act="dec">&minus;</div>
@@ -641,7 +638,7 @@
       const total = cartTotal();
       document.getElementById("totalValue").textContent = money(total);
       document.getElementById("vatBreakdown").textContent =
-        "dont TVA (10%) : " + money(tvaFromTtc(total)) + " · HT : " + money(htFromTtc(total));
+        "incl. VAT (10%): " + money(tvaFromTtc(total)) + " · excl. VAT: " + money(htFromTtc(total));
       document.getElementById("submitBtn").disabled = cart.length === 0;
     }
 
@@ -675,7 +672,7 @@
       if (!cart.length) return;
       const btn = document.getElementById("submitBtn");
       btn.disabled = true;
-      btn.textContent = "Envoi...";
+      btn.textContent = "Sending...";
 
       const total = cartTotal();
       const items = cart.map((l) => ({ dish_id: l.id, name: l.name, quantity: l.quantity, price: l.price }));
@@ -689,7 +686,7 @@
         addressOrTable = "Glovo";
       } else {
         const table = document.getElementById("tableInput").value.trim();
-        customerName = orderType === "dinein" ? "Salle (Caisse)" : "Comptoir (Caisse)";
+        customerName = orderType === "dinein" ? "Dining Room (POS)" : "Counter (POS)";
         customerPhone = "-";
         addressOrTable = table || null;
       }
@@ -714,15 +711,15 @@
       // which does allow anon inserts — so this succeeds.
       const { error } = await supabasePublic.from("orders").insert(payload);
 
-      btn.textContent = "Envoyer la commande";
+      btn.textContent = "Send Order";
       btn.disabled = cart.length === 0;
 
       if (error) {
-        showToast("Erreur : commande non envoyée", true);
+        showToast("Error: order not sent", true);
         return;
       }
 
-      showToast("Commande envoyée !");
+      showToast("Order sent!");
 
       if (document.getElementById("printToggle").checked && window.printOrder) {
         const localRef = Date.now().toString().slice(-6);
@@ -744,19 +741,17 @@
     }
 
     // ---------------------------------------------------------------------
-    // Rapports X / Z + export CSV
+    // X / Z reports + CSV export
     //
-    // Un Rapport X est un état des lieux intermédiaire (consultable à tout
-    // moment, ne modifie rien). Un Rapport Z clôture la période : il imprime
-    // le même état, puis avance le repère de clôture, de sorte que le
-    // prochain rapport (X ou Z) ne portera que sur les commandes reçues
-    // depuis cette clôture.
+    // An X Report is an intermediate snapshot (can be viewed at any time,
+    // changes nothing). A Z Report closes out the period: it prints the
+    // same snapshot, then advances the close marker, so the next report
+    // (X or Z) only covers orders received since that close.
     //
-    // Comme la table "orders" ne stocke pas de colonne de clôture de caisse,
-    // le repère de dernière clôture Z est conservé localement (navigateur
-    // de ce poste). Sur un poste de caisse unique, cela suffit ; si la
-    // caisse est utilisée depuis plusieurs postes/navigateurs, chacun garde
-    // son propre repère de clôture Z.
+    // Since the "orders" table doesn't store a POS-close column, the last
+    // Z-close marker is kept locally (this station's browser). On a single
+    // POS station this is enough; if the POS is used from several
+    // stations/browsers, each one keeps its own Z-close marker.
     // ---------------------------------------------------------------------
 
     function getPeriodStart() {
@@ -771,14 +766,18 @@
     }
 
     function isManualEntry(o) {
-      return (o.customer_name || "").trim().startsWith("Saisie manuelle");
+      const n = (o.customer_name || "").trim();
+      // "Manual entry" is the current prefix; "Saisie manuelle" is kept for
+      // backward compatibility with orders entered before this UI was
+      // translated to English.
+      return n.startsWith("Manual entry") || n.startsWith("Saisie manuelle");
     }
 
-    // Nombre de commandes représentées par une ligne. Pour une commande
-    // normale, c'est toujours 1. Pour une saisie manuelle groupée (ex. le
-    // total d'une journée entière), le nombre réel de commandes est stocké
-    // dans items[0].manualCount, afin que le compteur du rapport reste
-    // représentatif même si tout est entré en une seule ligne.
+    // Number of orders represented by one line. For a normal order,
+    // this is always 1. For a grouped manual entry (e.g. a whole day's
+    // total), the actual order count is stored in items[0].manualCount,
+    // so the report's counter stays representative even when everything
+    // is entered as a single line.
     function orderCountFor(o) {
       if (isManualEntry(o) && Array.isArray(o.items) && o.items[0] && o.items[0].manualCount) {
         const n = Number(o.items[0].manualCount);
@@ -787,19 +786,22 @@
       return 1;
     }
 
-    const PAYMENT_LABELS = { cash: "Espèces", card: "Carte bancaire", mixed: "Mixte / non renseigné" };
+    const PAYMENT_LABELS = { cash: "Cash", card: "Card", mixed: "Mixed / unspecified" };
 
     function classifyPayment(o) {
-      return PAYMENT_LABELS[o.payment_method] || "Non renseigné";
+      return PAYMENT_LABELS[o.payment_method] || "Not specified";
     }
 
+    // Recognizes both the current English labels and the French ones used
+    // before this UI was translated, so historical orders still classify
+    // correctly in reports.
     function classifyChannel(o) {
       const name = (o.customer_name || "").trim();
-      if (isManualEntry(o)) return "Saisie manuelle";
+      if (isManualEntry(o)) return "Manual entry";
       if (name.toUpperCase().startsWith("GLOVO")) return "Glovo";
-      if (name.startsWith("Salle (Caisse)")) return "Salle (Caisse)";
-      if (name.startsWith("Comptoir (Caisse)")) return "Comptoir (Caisse)";
-      return "Site web / Autre";
+      if (name.startsWith("Dining Room (POS)") || name.startsWith("Salle (Caisse)")) return "Dining Room (POS)";
+      if (name.startsWith("Counter (POS)") || name.startsWith("Comptoir (Caisse)")) return "Counter (POS)";
+      return "Website / Other";
     }
 
     async function fetchPeriodOrders(since, until) {
@@ -856,89 +858,89 @@
       };
     }
 
-    const TYPE_LABELS = { dinein: "Sur place", takeaway: "À emporter", delivery: "Livraison" };
+    const TYPE_LABELS = { dinein: "Dine-in", takeaway: "Takeaway", delivery: "Delivery" };
 
     function fmtDateTime(d) {
-      return d.toLocaleDateString("fr-FR") + " " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+      return d.toLocaleDateString("en-GB") + " " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
     }
 
     function reportToLines(report, label) {
       const lines = [];
       lines.push(label);
-      lines.push("Du " + fmtDateTime(report.since));
-      lines.push("Au " + fmtDateTime(report.until));
+      lines.push("From " + fmtDateTime(report.since));
+      lines.push("To " + fmtDateTime(report.until));
       lines.push("------------------------------");
-      lines.push("Commandes : " + report.orderCount);
-      if (report.cancelledCount) lines.push("Annulées  : " + report.cancelledCount);
-      lines.push("Panier moyen : " + money(report.avgBasket));
+      lines.push("Orders: " + report.orderCount);
+      if (report.cancelledCount) lines.push("Cancelled: " + report.cancelledCount);
+      lines.push("Average basket: " + money(report.avgBasket));
       lines.push("------------------------------");
-      lines.push("PAR CANAL");
+      lines.push("BY CHANNEL");
       Object.keys(report.byChannel).forEach((ch) => {
         const r = report.byChannel[ch];
-        lines.push(ch + " : " + r.count + " cmd. - " + money(r.revenue));
+        lines.push(ch + " : " + r.count + " ord. - " + money(r.revenue));
       });
       lines.push("------------------------------");
-      lines.push("PAR TYPE");
+      lines.push("BY TYPE");
       Object.keys(report.byType).forEach((ty) => {
         const r = report.byType[ty];
-        lines.push((TYPE_LABELS[ty] || ty) + " : " + r.count + " cmd. - " + money(r.revenue));
+        lines.push((TYPE_LABELS[ty] || ty) + " : " + r.count + " ord. - " + money(r.revenue));
       });
       lines.push("------------------------------");
-      lines.push("PAR PAIEMENT");
+      lines.push("BY PAYMENT");
       Object.keys(report.byPayment).forEach((pay) => {
         const r = report.byPayment[pay];
-        lines.push(pay + " : " + r.count + " cmd. - " + money(r.revenue));
+        lines.push(pay + " : " + r.count + " ord. - " + money(r.revenue));
       });
       lines.push("------------------------------");
-      lines.push("TOTAL TTC : " + money(report.revenue));
-      lines.push("dont TVA (10%) : " + money(tvaFromTtc(report.revenue)));
-      lines.push("Total HT : " + money(htFromTtc(report.revenue)));
+      lines.push("TOTAL incl. VAT: " + money(report.revenue));
+      lines.push("incl. VAT (10%): " + money(tvaFromTtc(report.revenue)));
+      lines.push("Total excl. VAT: " + money(htFromTtc(report.revenue)));
       return lines;
     }
 
     function renderReportModal(report, kind) {
-      const title = kind === "z" ? "Rapport Z" : "Rapport X";
+      const title = kind === "z" ? "Z Report" : "X Report";
       document.getElementById("reportTitle").textContent = title;
       document.getElementById("reportSub").textContent =
-        "Du " + fmtDateTime(report.since) + " au " + fmtDateTime(report.until);
+        "From " + fmtDateTime(report.since) + " to " + fmtDateTime(report.until);
 
       const body = document.getElementById("reportBody");
       let html = "";
-      html += `<div class="report-line"><span>Commandes</span><span>${report.orderCount}</span></div>`;
+      html += `<div class="report-line"><span>Orders</span><span>${report.orderCount}</span></div>`;
       if (report.cancelledCount) {
-        html += `<div class="report-line"><span>Annulées</span><span>${report.cancelledCount}</span></div>`;
+        html += `<div class="report-line"><span>Cancelled</span><span>${report.cancelledCount}</span></div>`;
       }
-      html += `<div class="report-line"><span>Panier moyen</span><span>${money(report.avgBasket)}</span></div>`;
+      html += `<div class="report-line"><span>Average basket</span><span>${money(report.avgBasket)}</span></div>`;
 
-      html += `<div class="report-section-title">Par canal</div>`;
+      html += `<div class="report-section-title">By channel</div>`;
       Object.keys(report.byChannel).forEach((ch) => {
         const r = report.byChannel[ch];
         html += `<div class="report-line"><span>${escapeHtml(ch)} (${r.count})</span><span>${money(r.revenue)}</span></div>`;
       });
 
-      html += `<div class="report-section-title">Par type</div>`;
+      html += `<div class="report-section-title">By type</div>`;
       Object.keys(report.byType).forEach((ty) => {
         const r = report.byType[ty];
         html += `<div class="report-line"><span>${escapeHtml(TYPE_LABELS[ty] || ty)} (${r.count})</span><span>${money(r.revenue)}</span></div>`;
       });
 
-      html += `<div class="report-section-title">Par paiement</div>`;
+      html += `<div class="report-section-title">By payment</div>`;
       Object.keys(report.byPayment).forEach((pay) => {
         const r = report.byPayment[pay];
         html += `<div class="report-line"><span>${escapeHtml(pay)} (${r.count})</span><span>${money(r.revenue)}</span></div>`;
       });
 
-      html += `<div class="report-section-title">TVA (10%, incluse dans les totaux)</div>`;
-      html += `<div class="report-line"><span>Total HT</span><span>${money(htFromTtc(report.revenue))}</span></div>`;
-      html += `<div class="report-line"><span>TVA (10%)</span><span>${money(tvaFromTtc(report.revenue))}</span></div>`;
-      html += `<div class="report-line total"><span>TOTAL TTC</span><span>${money(report.revenue)}</span></div>`;
+      html += `<div class="report-section-title">VAT (10%, included in totals)</div>`;
+      html += `<div class="report-line"><span>Total excl. VAT</span><span>${money(htFromTtc(report.revenue))}</span></div>`;
+      html += `<div class="report-line"><span>VAT (10%)</span><span>${money(tvaFromTtc(report.revenue))}</span></div>`;
+      html += `<div class="report-line total"><span>TOTAL incl. VAT</span><span>${money(report.revenue)}</span></div>`;
       body.innerHTML = html;
 
       const actions = document.getElementById("reportActions");
       actions.innerHTML = "";
 
       const printBtn = document.createElement("button");
-      printBtn.textContent = "Imprimer";
+      printBtn.textContent = "Print";
       printBtn.className = "primary";
       printBtn.onclick = () => {
         if (window.printPlainDocument) {
@@ -949,18 +951,18 @@
 
       if (kind === "z") {
         const closeBtn = document.createElement("button");
-        closeBtn.textContent = "Clôturer";
+        closeBtn.textContent = "Close POS";
         closeBtn.className = "danger";
         closeBtn.onclick = () => {
           localStorage.setItem(LAST_Z_KEY, report.until.toISOString());
           closeReportModal();
-          showToast("Caisse clôturée");
+          showToast("POS closed");
         };
         actions.appendChild(closeBtn);
       }
 
       const closeOnlyBtn = document.createElement("button");
-      closeOnlyBtn.textContent = "Fermer";
+      closeOnlyBtn.textContent = "Close";
       closeOnlyBtn.onclick = closeReportModal;
       actions.appendChild(closeOnlyBtn);
 
@@ -980,11 +982,11 @@
     }
 
     async function runReport(kind) {
-      // Le Rapport Z clôture toujours depuis la dernière clôture jusqu'à
-      // maintenant (c'est ce qui donne son sens à la clôture de caisse).
-      // Le Rapport X (aperçu, ne clôture rien) utilise la période "Du / Au"
-      // choisie en haut de l'écran, ce qui permet par exemple de consulter
-      // tout le mois en cours, saisies manuelles comprises.
+      // The Z Report always closes out from the last close until now
+      // (that's what gives the POS close its meaning). The X Report
+      // (preview, closes nothing) uses the "From / To" period chosen
+      // at the top of the screen, which allows e.g. reviewing the whole
+      // current month, manual entries included.
       let since, until;
       if (kind === "z") {
         since = getPeriodStart();
@@ -997,7 +999,7 @@
         const report = buildReport(orders, since, until);
         renderReportModal(report, kind);
       } catch (e) {
-        showToast("Erreur lors du calcul du rapport", true);
+        showToast("Error calculating report", true);
       }
     }
 
@@ -1011,15 +1013,15 @@
       const { since, until } = getRangeInputDates();
       try {
         const orders = await fetchPeriodOrders(since, until);
-        const header = ["Date", "Heure", "Canal", "Type", "Paiement", "Table / Adresse", "Articles", "Commandes", "Total TTC (DH)", "Total HT (DH)", "TVA 10% (DH)", "Statut"];
+        const header = ["Date", "Time", "Channel", "Type", "Payment", "Table / Address", "Items", "Orders", "Total incl. VAT (DH)", "Total excl. VAT (DH)", "VAT 10% (DH)", "Status"];
         const rows = orders.map((o) => {
           const created = new Date(o.created_at);
           const itemsStr = Array.isArray(o.items)
             ? o.items.map((it) => `${it.quantity || it.qty || 1}x ${it.name}`).join(" | ")
             : "";
           return [
-            created.toLocaleDateString("fr-FR"),
-            created.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+            created.toLocaleDateString("en-GB"),
+            created.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
             classifyChannel(o),
             TYPE_LABELS[o.order_type] || o.order_type || "",
             classifyPayment(o),
@@ -1043,206 +1045,23 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        showToast("Export CSV téléchargé");
+        showToast("CSV export downloaded");
       } catch (e) {
-        showToast("Erreur lors de l'export CSV", true);
+        showToast("Error exporting CSV", true);
       }
     }
 
     // ---------------------------------------------------------------------
-    // Achats théoriques : calcule, pour une période donnée, la quantité
-    // d'ingrédients qui aurait dû être consommée d'après les ventes
-    // (commandes -> recipe_ingredients -> ingredients), et son coût.
-    //
-    // Chaque article d'une commande est rattaché à son plat en priorité par
-    // dish_id (ajouté aux nouvelles commandes depuis cette fonctionnalité) ;
-    // pour les commandes plus anciennes qui n'ont pas encore ce champ, on
-    // retombe sur une correspondance par nom de plat (insensible à la
-    // casse). Un article qu'on ne peut rattacher à aucun plat (nom modifié
-    // depuis, plat supprimé, etc.) est listé à part plutôt qu'ignoré en
-    // silence, pour que l'info reste fiable.
+    // Manual entry: lets you add a past sales total after the fact (e.g.
+    // from the start of the month, before the POS was set up), so it's
+    // counted in the X/Z reports and CSV export. Stored as a normal order
+    // (status "completed", so invisible on the live dashboard), but
+    // recognized as "Manual entry" in reports via the name prefix.
     // ---------------------------------------------------------------------
 
-    let ingredientsCache = null;
-    let recipeIngredientsCache = null;
-
-    async function loadRecipeData() {
-      if (ingredientsCache && recipeIngredientsCache) {
-        return { ingredientsList: ingredientsCache, recipeList: recipeIngredientsCache };
-      }
-      const [ingRes, recRes] = await Promise.all([
-        supabase.from("ingredients").select("id,name,unit,cost_per_unit"),
-        supabase.from("recipe_ingredients").select("dish_id,ingredient_id,quantity"),
-      ]);
-      if (ingRes.error || recRes.error) {
-        throw ingRes.error || recRes.error;
-      }
-      ingredientsCache = ingRes.data || [];
-      recipeIngredientsCache = recRes.data || [];
-      return { ingredientsList: ingredientsCache, recipeList: recipeIngredientsCache };
-    }
-
-    function buildPurchaseReport(orders, ingredientsList, recipeList) {
-      const ingredientById = new Map(ingredientsList.map((i) => [i.id, i]));
-      const dishById = new Map(dishes.map((d) => [d.id, d]));
-      const dishIdByNameLower = new Map(dishes.map((d) => [String(d.name || "").trim().toLowerCase(), d.id]));
-
-      // dish_id -> [{ ingredient_id, quantity }]
-      const recipeByDish = new Map();
-      recipeList.forEach((r) => {
-        if (!recipeByDish.has(r.dish_id)) recipeByDish.set(r.dish_id, []);
-        recipeByDish.get(r.dish_id).push(r);
-      });
-
-      const usage = new Map(); // ingredient_id -> quantity totale
-      const unmatched = new Map(); // nom d'article -> quantité totale (non rattaché à un plat)
-      const dishesWithoutRecipe = new Map(); // nom de plat -> quantité vendue (rattaché, mais sans recette)
-      let matchedLineCount = 0;
-
-      orders.forEach((o) => {
-        const items = Array.isArray(o.items) ? o.items : [];
-        items.forEach((it) => {
-          const qtySold = Number(it.quantity || it.qty || 1);
-          if (!qtySold) return;
-          let dishId = it.dish_id && dishById.has(it.dish_id) ? it.dish_id : null;
-          if (!dishId) {
-            const nameLower = String(it.name || "").trim().toLowerCase();
-            dishId = dishIdByNameLower.get(nameLower) || null;
-          }
-          if (!dishId) {
-            const key = it.name || "(sans nom)";
-            unmatched.set(key, (unmatched.get(key) || 0) + qtySold);
-            return;
-          }
-          const recipeLines = recipeByDish.get(dishId);
-          if (!recipeLines || !recipeLines.length) {
-            const dish = dishById.get(dishId);
-            const key = (dish && dish.name) || it.name || "(sans nom)";
-            dishesWithoutRecipe.set(key, (dishesWithoutRecipe.get(key) || 0) + qtySold);
-            return;
-          }
-          matchedLineCount++;
-          recipeLines.forEach((r) => {
-            const need = Number(r.quantity || 0) * qtySold;
-            usage.set(r.ingredient_id, (usage.get(r.ingredient_id) || 0) + need);
-          });
-        });
-      });
-
-      const lines = Array.from(usage.entries())
-        .map(([ingredientId, qty]) => {
-          const ing = ingredientById.get(ingredientId);
-          const unitCost = ing ? Number(ing.cost_per_unit || 0) : 0;
-          return {
-            name: ing ? ing.name : "Ingrédient inconnu",
-            unit: ing ? ing.unit : "",
-            quantity: qty,
-            cost: qty * unitCost,
-          };
-        })
-        .sort((a, b) => b.cost - a.cost);
-
-      const totalCost = lines.reduce((sum, l) => sum + l.cost, 0);
-
-      return {
-        lines,
-        totalCost,
-        matchedLineCount,
-        unmatched: Array.from(unmatched.entries()).map(([name, qty]) => ({ name, quantity: qty })),
-        dishesWithoutRecipe: Array.from(dishesWithoutRecipe.entries()).map(([name, qty]) => ({ name, quantity: qty })),
-      };
-    }
-
-    function fmtQty(n) {
-      // Jusqu'à 3 décimales, sans zéros inutiles (ex : 1.5 kg, pas 1.500 kg).
-      return Number(n || 0).toLocaleString("fr-FR", { maximumFractionDigits: 3 });
-    }
-
-    function renderPurchaseReportModal(report, since, until) {
-      document.getElementById("reportTitle").textContent = "Achats théoriques";
-      document.getElementById("reportSub").textContent =
-        "Du " + fmtDateTime(since) + " au " + fmtDateTime(until) + " · d'après les ventes";
-
-      const body = document.getElementById("reportBody");
-      let html = "";
-
-      if (!report.lines.length) {
-        html += `<div class="report-line"><span>Aucun ingrédient à afficher pour cette période.</span></div>`;
-      } else {
-        html += `<div class="report-section-title">Quantités théoriques nécessaires</div>`;
-        report.lines.forEach((l) => {
-          html += `<div class="report-line"><span>${escapeHtml(l.name)}</span><span>${fmtQty(l.quantity)} ${escapeHtml(l.unit || "")} &middot; ${money(l.cost)}</span></div>`;
-        });
-        html += `<div class="report-line total"><span>Coût total ingrédients</span><span>${money(report.totalCost)}</span></div>`;
-      }
-
-      if (report.dishesWithoutRecipe.length) {
-        html += `<div class="report-section-title">Plats vendus sans recette enregistrée</div>`;
-        report.dishesWithoutRecipe.forEach((d) => {
-          html += `<div class="report-line"><span>${escapeHtml(d.name)}</span><span>${fmtQty(d.quantity)}x vendu</span></div>`;
-        });
-      }
-
-      if (report.unmatched.length) {
-        html += `<div class="report-section-title">Articles non reconnus (nom introuvable dans la carte)</div>`;
-        report.unmatched.forEach((u) => {
-          html += `<div class="report-line"><span>${escapeHtml(u.name)}</span><span>${fmtQty(u.quantity)}x vendu</span></div>`;
-        });
-      }
-
-      body.innerHTML = html;
-
-      const actions = document.getElementById("reportActions");
-      actions.innerHTML = "";
-
-      const printBtn = document.createElement("button");
-      printBtn.textContent = "Imprimer";
-      printBtn.className = "primary";
-      printBtn.onclick = () => {
-        if (window.printPlainDocument) {
-          const printLines = ["Achats théoriques", "Du " + fmtDateTime(since), "Au " + fmtDateTime(until), "------------------------------"];
-          report.lines.forEach((l) => printLines.push(l.name + " : " + fmtQty(l.quantity) + " " + (l.unit || "") + " - " + money(l.cost)));
-          printLines.push("------------------------------");
-          printLines.push("Coût total : " + money(report.totalCost));
-          window.printPlainDocument("Achats théoriques", printLines);
-        }
-      };
-      actions.appendChild(printBtn);
-
-      const closeOnlyBtn = document.createElement("button");
-      closeOnlyBtn.textContent = "Fermer";
-      closeOnlyBtn.onclick = closeReportModal;
-      actions.appendChild(closeOnlyBtn);
-
-      document.getElementById("reportModal").classList.add("show");
-    }
-
-    async function runPurchaseReport() {
-      const { since, until } = getRangeInputDates();
-      try {
-        const [orders, { ingredientsList, recipeList }] = await Promise.all([
-          fetchPeriodOrders(since, until),
-          loadRecipeData(),
-        ]);
-        const report = buildPurchaseReport(orders, ingredientsList, recipeList);
-        renderPurchaseReportModal(report, since, until);
-      } catch (e) {
-        showToast("Erreur lors du calcul des achats théoriques", true);
-      }
-    }
-
-    // ---------------------------------------------------------------------
-    // Saisie manuelle : permet d'ajouter après coup un total de vente pour
-    // une date passée (ex. depuis le début du mois, avant la mise en place
-    // de la caisse), afin qu'il soit compté dans les rapports X/Z et
-    // l'export CSV. Enregistré comme une commande normale (statut
-    // "completed", donc invisible sur le Tableau en direct), mais reconnue
-    // comme "Saisie manuelle" dans les rapports grâce au préfixe du nom.
-    // ---------------------------------------------------------------------
-
-    // Prix d'un plat pour le canal actuellement sélectionné dans la saisie
-    // manuelle (Glovo utilise glovo_price, tout le reste menu_price — comme
-    // en caisse normale).
+    // Price of a dish for the channel currently selected in manual entry
+    // (Glovo uses glovo_price, everything else uses menu_price — same as
+    // the normal POS).
     function manualPriceForDish(dish) {
       const ch = document.getElementById("manualChannel").value;
       return ch === "delivery-glovo" ? dish.glovo_price : dish.menu_price;
@@ -1255,7 +1074,7 @@
       grid.innerHTML = "";
       document.getElementById("manualDishEmpty").style.display = filtered.length ? "none" : "block";
       document.getElementById("manualDishCount").textContent =
-        filtered.length + " plat" + (filtered.length !== 1 ? "s" : "");
+        filtered.length + " dish" + (filtered.length !== 1 ? "es" : "");
       filtered.forEach((d) => {
         const price = manualPriceForDish(d);
         const available = price != null;
@@ -1263,7 +1082,7 @@
         card.className = "dish-card" + (available ? "" : " dish-unavailable");
         const priceHtml = available
           ? `<div class="dish-price">${money(price)}</div>`
-          : `<div class="dish-price">—</div><div class="dish-flag">Non dispo sur ce canal</div>`;
+          : `<div class="dish-price">—</div><div class="dish-flag">Not available on this channel</div>`;
         card.innerHTML = `<div class="dish-name">${escapeHtml(d.name)}</div>${priceHtml}`;
         card.disabled = !available;
         card.onclick = () => { if (available) addToManualCart(d); };
@@ -1280,8 +1099,8 @@
       renderManualCart();
     }
 
-    // Recalcule les prix du panier de saisie manuelle quand on change de
-    // canal (ex. un plat non vendu sur Glovo est retiré, comme en caisse).
+    // Recalculates manual-entry cart prices when the channel changes
+    // (e.g. a dish not sold on Glovo is removed, same as the normal POS).
     function resyncManualCartPrices() {
       manualCart = manualCart
         .map((l) => {
@@ -1311,7 +1130,7 @@
       const wrap = document.getElementById("manualCartItems");
       wrap.innerHTML = "";
       if (!manualCart.length) {
-        wrap.innerHTML = '<div class="cart-empty">Aucun article ajouté</div>';
+        wrap.innerHTML = '<div class="cart-empty">No items added</div>';
       } else {
         manualCart.forEach((l) => {
           const row = document.createElement("div");
@@ -1319,7 +1138,7 @@
           row.innerHTML = `
             <div style="flex:1;">
               <div class="cart-line-name">${escapeHtml(l.name)}</div>
-              <div class="cart-line-price">${money(l.price)} / unité</div>
+              <div class="cart-line-price">${money(l.price)} / unit</div>
             </div>
             <div class="qty-stepper">
               <div class="qty-btn" data-act="dec">&minus;</div>
@@ -1337,7 +1156,7 @@
       const total = manualCartTotal();
       document.getElementById("manualTotalValue").textContent = money(total);
       document.getElementById("manualVatBreakdown").textContent =
-        "dont TVA (10%) : " + money(tvaFromTtc(total)) + " · HT : " + money(htFromTtc(total));
+        "incl. VAT (10%): " + money(tvaFromTtc(total)) + " · excl. VAT: " + money(htFromTtc(total));
     }
 
     function setManualMode(m) {
@@ -1370,10 +1189,10 @@
     }
 
     const MANUAL_CHANNEL_LABELS = {
-      "dinein": "Salle",
-      "takeaway": "Comptoir",
+      "dinein": "Dining Room",
+      "takeaway": "Counter",
       "delivery-glovo": "Glovo",
-      "delivery-site": "Site web / Livraison",
+      "delivery-site": "Website / Delivery",
     };
     const MANUAL_ORDER_TYPE = {
       "dinein": "dinein",
@@ -1390,12 +1209,12 @@
       const paymentSel = document.getElementById("manualPayment").value;
 
       if (!dateVal) {
-        showToast("Date requise", true);
+        showToast("Date required", true);
         return;
       }
       const createdAt = new Date(`${dateVal}T${timeVal}:00`);
       if (isNaN(createdAt.getTime())) {
-        showToast("Date invalide", true);
+        showToast("Invalid date", true);
         return;
       }
 
@@ -1403,12 +1222,12 @@
 
       if (manualMode === "detail") {
         if (!manualCart.length) {
-          showToast("Ajoute au moins un plat", true);
+          showToast("Add at least one dish", true);
           return;
         }
         payload = {
           order_type: MANUAL_ORDER_TYPE[channelSel] || "takeaway",
-          customer_name: "Saisie manuelle · " + (MANUAL_CHANNEL_LABELS[channelSel] || "Autre"),
+          customer_name: "Manual entry · " + (MANUAL_CHANNEL_LABELS[channelSel] || "Other"),
           customer_phone: "-",
           address_or_table: null,
           special_notes: note || null,
@@ -1422,16 +1241,16 @@
         const amount = parseFloat(document.getElementById("manualAmount").value);
         const count = Math.max(1, parseInt(document.getElementById("manualCount").value, 10) || 1);
         if (isNaN(amount) || amount <= 0) {
-          showToast("Montant requis", true);
+          showToast("Amount required", true);
           return;
         }
         payload = {
           order_type: MANUAL_ORDER_TYPE[channelSel] || "takeaway",
-          customer_name: "Saisie manuelle · " + (MANUAL_CHANNEL_LABELS[channelSel] || "Autre"),
+          customer_name: "Manual entry · " + (MANUAL_CHANNEL_LABELS[channelSel] || "Other"),
           customer_phone: "-",
           address_or_table: null,
           special_notes: note || null,
-          items: [{ name: note || "Saisie manuelle", quantity: 1, price: amount, manualCount: count }],
+          items: [{ name: note || "Manual entry", quantity: 1, price: amount, manualCount: count }],
           total: amount,
           status: "completed",
           created_at: createdAt.toISOString(),
@@ -1441,38 +1260,38 @@
 
       const btn = document.getElementById("manualSubmitBtn");
       btn.disabled = true;
-      btn.textContent = "Ajout...";
+      btn.textContent = "Adding...";
 
       const { error } = await supabasePublic.from("orders").insert(payload);
 
       btn.disabled = false;
-      btn.textContent = "Ajouter";
+      btn.textContent = "Add";
 
       if (error) {
-        showToast("Erreur : saisie non enregistrée", true);
+        showToast("Error: entry not saved", true);
         return;
       }
 
       if (manualMode === "detail") {
-        // On garde la modale ouverte, avec la même date/heure/canal/paiement :
-        // en général on enchaîne plusieurs commandes pour le même jour depuis
-        // un même ticket papier. Seuls le panier et la note sont réinitialisés.
-        showToast("Commande ajoutée (" + manualCart.length + " plat" + (manualCart.length !== 1 ? "s" : "") + ")");
+        // Keep the modal open, with the same date/time/channel/payment:
+        // usually several orders are entered in a row for the same day from
+        // the same paper ticket. Only the cart and note are reset.
+        showToast("Order added (" + manualCart.length + " dish" + (manualCart.length !== 1 ? "es" : "") + ")");
         manualCart = [];
         document.getElementById("manualNote").value = "";
         renderManualCart();
       } else {
-        showToast("Saisie manuelle ajoutée");
+        showToast("Manual entry added");
         closeManualModal();
       }
     }
 
     // ---------------------------------------------------------------------
-    // Prix Glovo : gestion des prix spécifiques à Glovo, plat par plat.
-    // Le prix restaurant (menu_price) reste inchangé ; glovo_price est un
-    // second prix optionnel, utilisé uniquement quand le canal "Glovo" est
-    // sélectionné en caisse. Un plat sans glovo_price n'est pas proposé
-    // côté Glovo (voir priceForChannel / renderGrid).
+    // Glovo Prices: manage Glovo-specific prices, dish by dish.
+    // The restaurant price (menu_price) stays unchanged; glovo_price is a
+    // second, optional price used only when the "Glovo" channel is
+    // selected at the POS. A dish with no glovo_price isn't offered on
+    // Glovo (see priceForChannel / renderGrid).
     // ---------------------------------------------------------------------
 
     let glovoSearchTerm = "";
@@ -1493,12 +1312,12 @@
       const term = glovoSearchTerm.toLowerCase().trim();
       const filtered = dishes.filter((d) => !term || d.name.toLowerCase().includes(term));
       document.getElementById("glovoCount").textContent =
-        filtered.filter((d) => d.glovo_price != null).length + " / " + filtered.length + " sur Glovo";
+        filtered.filter((d) => d.glovo_price != null).length + " / " + filtered.length + " on Glovo";
 
       body.innerHTML = "";
       let lastCat = null;
       filtered.forEach((d) => {
-        const cat = d.category || "Autre";
+        const cat = d.category || "Other";
         if (cat !== lastCat) {
           lastCat = cat;
           const catRow = document.createElement("tr");
@@ -1528,26 +1347,26 @@
       const raw = input.value.trim();
       const value = raw === "" ? null : parseFloat(raw);
       if (raw !== "" && (isNaN(value) || value < 0)) {
-        stateEl.textContent = "Valeur invalide";
+        stateEl.textContent = "Invalid value";
         stateEl.className = "glovo-save-state err";
         return;
       }
-      stateEl.textContent = "Enregistrement...";
+      stateEl.textContent = "Saving...";
       stateEl.className = "glovo-save-state";
       const { error } = await supabase.from("dishes").update({ glovo_price: value }).eq("id", dish.id);
       if (error) {
-        stateEl.textContent = "Erreur";
+        stateEl.textContent = "Error";
         stateEl.className = "glovo-save-state err";
         return;
       }
       dish.glovo_price = value;
       input.classList.toggle("empty", value == null);
-      stateEl.textContent = "Enregistré";
+      stateEl.textContent = "Saved";
       stateEl.className = "glovo-save-state ok";
       clearTimeout(glovoSaveTimer);
       glovoSaveTimer = setTimeout(() => { stateEl.textContent = ""; }, 1800);
       document.getElementById("glovoCount").textContent =
-        dishes.filter((d) => d.glovo_price != null).length + " / " + dishes.length + " sur Glovo";
+        dishes.filter((d) => d.glovo_price != null).length + " / " + dishes.length + " on Glovo";
       renderGrid();
       if (cart.length) resyncCartPrices();
     }
@@ -1574,7 +1393,6 @@
     document.getElementById("btnReportX").onclick = () => runReport("x");
     document.getElementById("btnReportZ").onclick = () => runReport("z");
     document.getElementById("btnExportCsv").onclick = exportCsv;
-    document.getElementById("btnPurchaseReport").onclick = runPurchaseReport;
     document.getElementById("btnManualEntry").onclick = openManualModal;
     document.getElementById("manualCancelBtn").onclick = closeManualModal;
     document.getElementById("manualSubmitBtn").onclick = submitManualEntry;
