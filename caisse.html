@@ -38,6 +38,8 @@
   .report-btn.manual{color:var(--gold-light);border-color:var(--gold);}
   .report-btn.glovo-prices{color:#ffc244;border-color:#8a6a1f;}
   .report-btn.glovo-prices:hover{color:#ffc244;border-color:#ffc244;}
+  .report-btn.purchase{color:var(--green);border-color:#2f6b4f;}
+  .report-btn.purchase:hover{color:var(--green);border-color:var(--green);}
   .range-field{
     display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dimmer);
     text-transform:uppercase;letter-spacing:.05em;
@@ -239,6 +241,7 @@
       <button class="report-btn" id="btnExportCsv">Export CSV</button>
       <button class="report-btn manual" id="btnManualEntry">+ Saisie manuelle</button>
       <button class="report-btn glovo-prices" id="btnGlovoPrices">Prix Glovo</button>
+      <button class="report-btn purchase" id="btnPurchaseReport">Achats théoriques</button>
       <a class="back-link" href="index.html">&larr; Retour au tableau</a>
     </div>
   </header>
@@ -675,7 +678,7 @@
       btn.textContent = "Envoi...";
 
       const total = cartTotal();
-      const items = cart.map((l) => ({ name: l.name, quantity: l.quantity, price: l.price }));
+      const items = cart.map((l) => ({ dish_id: l.id, name: l.name, quantity: l.quantity, price: l.price }));
       const notes = document.getElementById("notesInput").value.trim() || null;
 
       let customerName, customerPhone, addressOrTable;
@@ -1047,6 +1050,188 @@
     }
 
     // ---------------------------------------------------------------------
+    // Achats théoriques : calcule, pour une période donnée, la quantité
+    // d'ingrédients qui aurait dû être consommée d'après les ventes
+    // (commandes -> recipe_ingredients -> ingredients), et son coût.
+    //
+    // Chaque article d'une commande est rattaché à son plat en priorité par
+    // dish_id (ajouté aux nouvelles commandes depuis cette fonctionnalité) ;
+    // pour les commandes plus anciennes qui n'ont pas encore ce champ, on
+    // retombe sur une correspondance par nom de plat (insensible à la
+    // casse). Un article qu'on ne peut rattacher à aucun plat (nom modifié
+    // depuis, plat supprimé, etc.) est listé à part plutôt qu'ignoré en
+    // silence, pour que l'info reste fiable.
+    // ---------------------------------------------------------------------
+
+    let ingredientsCache = null;
+    let recipeIngredientsCache = null;
+
+    async function loadRecipeData() {
+      if (ingredientsCache && recipeIngredientsCache) {
+        return { ingredientsList: ingredientsCache, recipeList: recipeIngredientsCache };
+      }
+      const [ingRes, recRes] = await Promise.all([
+        supabase.from("ingredients").select("id,name,unit,cost_per_unit"),
+        supabase.from("recipe_ingredients").select("dish_id,ingredient_id,quantity"),
+      ]);
+      if (ingRes.error || recRes.error) {
+        throw ingRes.error || recRes.error;
+      }
+      ingredientsCache = ingRes.data || [];
+      recipeIngredientsCache = recRes.data || [];
+      return { ingredientsList: ingredientsCache, recipeList: recipeIngredientsCache };
+    }
+
+    function buildPurchaseReport(orders, ingredientsList, recipeList) {
+      const ingredientById = new Map(ingredientsList.map((i) => [i.id, i]));
+      const dishById = new Map(dishes.map((d) => [d.id, d]));
+      const dishIdByNameLower = new Map(dishes.map((d) => [String(d.name || "").trim().toLowerCase(), d.id]));
+
+      // dish_id -> [{ ingredient_id, quantity }]
+      const recipeByDish = new Map();
+      recipeList.forEach((r) => {
+        if (!recipeByDish.has(r.dish_id)) recipeByDish.set(r.dish_id, []);
+        recipeByDish.get(r.dish_id).push(r);
+      });
+
+      const usage = new Map(); // ingredient_id -> quantity totale
+      const unmatched = new Map(); // nom d'article -> quantité totale (non rattaché à un plat)
+      const dishesWithoutRecipe = new Map(); // nom de plat -> quantité vendue (rattaché, mais sans recette)
+      let matchedLineCount = 0;
+
+      orders.forEach((o) => {
+        const items = Array.isArray(o.items) ? o.items : [];
+        items.forEach((it) => {
+          const qtySold = Number(it.quantity || it.qty || 1);
+          if (!qtySold) return;
+          let dishId = it.dish_id && dishById.has(it.dish_id) ? it.dish_id : null;
+          if (!dishId) {
+            const nameLower = String(it.name || "").trim().toLowerCase();
+            dishId = dishIdByNameLower.get(nameLower) || null;
+          }
+          if (!dishId) {
+            const key = it.name || "(sans nom)";
+            unmatched.set(key, (unmatched.get(key) || 0) + qtySold);
+            return;
+          }
+          const recipeLines = recipeByDish.get(dishId);
+          if (!recipeLines || !recipeLines.length) {
+            const dish = dishById.get(dishId);
+            const key = (dish && dish.name) || it.name || "(sans nom)";
+            dishesWithoutRecipe.set(key, (dishesWithoutRecipe.get(key) || 0) + qtySold);
+            return;
+          }
+          matchedLineCount++;
+          recipeLines.forEach((r) => {
+            const need = Number(r.quantity || 0) * qtySold;
+            usage.set(r.ingredient_id, (usage.get(r.ingredient_id) || 0) + need);
+          });
+        });
+      });
+
+      const lines = Array.from(usage.entries())
+        .map(([ingredientId, qty]) => {
+          const ing = ingredientById.get(ingredientId);
+          const unitCost = ing ? Number(ing.cost_per_unit || 0) : 0;
+          return {
+            name: ing ? ing.name : "Ingrédient inconnu",
+            unit: ing ? ing.unit : "",
+            quantity: qty,
+            cost: qty * unitCost,
+          };
+        })
+        .sort((a, b) => b.cost - a.cost);
+
+      const totalCost = lines.reduce((sum, l) => sum + l.cost, 0);
+
+      return {
+        lines,
+        totalCost,
+        matchedLineCount,
+        unmatched: Array.from(unmatched.entries()).map(([name, qty]) => ({ name, quantity: qty })),
+        dishesWithoutRecipe: Array.from(dishesWithoutRecipe.entries()).map(([name, qty]) => ({ name, quantity: qty })),
+      };
+    }
+
+    function fmtQty(n) {
+      // Jusqu'à 3 décimales, sans zéros inutiles (ex : 1.5 kg, pas 1.500 kg).
+      return Number(n || 0).toLocaleString("fr-FR", { maximumFractionDigits: 3 });
+    }
+
+    function renderPurchaseReportModal(report, since, until) {
+      document.getElementById("reportTitle").textContent = "Achats théoriques";
+      document.getElementById("reportSub").textContent =
+        "Du " + fmtDateTime(since) + " au " + fmtDateTime(until) + " · d'après les ventes";
+
+      const body = document.getElementById("reportBody");
+      let html = "";
+
+      if (!report.lines.length) {
+        html += `<div class="report-line"><span>Aucun ingrédient à afficher pour cette période.</span></div>`;
+      } else {
+        html += `<div class="report-section-title">Quantités théoriques nécessaires</div>`;
+        report.lines.forEach((l) => {
+          html += `<div class="report-line"><span>${escapeHtml(l.name)}</span><span>${fmtQty(l.quantity)} ${escapeHtml(l.unit || "")} &middot; ${money(l.cost)}</span></div>`;
+        });
+        html += `<div class="report-line total"><span>Coût total ingrédients</span><span>${money(report.totalCost)}</span></div>`;
+      }
+
+      if (report.dishesWithoutRecipe.length) {
+        html += `<div class="report-section-title">Plats vendus sans recette enregistrée</div>`;
+        report.dishesWithoutRecipe.forEach((d) => {
+          html += `<div class="report-line"><span>${escapeHtml(d.name)}</span><span>${fmtQty(d.quantity)}x vendu</span></div>`;
+        });
+      }
+
+      if (report.unmatched.length) {
+        html += `<div class="report-section-title">Articles non reconnus (nom introuvable dans la carte)</div>`;
+        report.unmatched.forEach((u) => {
+          html += `<div class="report-line"><span>${escapeHtml(u.name)}</span><span>${fmtQty(u.quantity)}x vendu</span></div>`;
+        });
+      }
+
+      body.innerHTML = html;
+
+      const actions = document.getElementById("reportActions");
+      actions.innerHTML = "";
+
+      const printBtn = document.createElement("button");
+      printBtn.textContent = "Imprimer";
+      printBtn.className = "primary";
+      printBtn.onclick = () => {
+        if (window.printPlainDocument) {
+          const printLines = ["Achats théoriques", "Du " + fmtDateTime(since), "Au " + fmtDateTime(until), "------------------------------"];
+          report.lines.forEach((l) => printLines.push(l.name + " : " + fmtQty(l.quantity) + " " + (l.unit || "") + " - " + money(l.cost)));
+          printLines.push("------------------------------");
+          printLines.push("Coût total : " + money(report.totalCost));
+          window.printPlainDocument("Achats théoriques", printLines);
+        }
+      };
+      actions.appendChild(printBtn);
+
+      const closeOnlyBtn = document.createElement("button");
+      closeOnlyBtn.textContent = "Fermer";
+      closeOnlyBtn.onclick = closeReportModal;
+      actions.appendChild(closeOnlyBtn);
+
+      document.getElementById("reportModal").classList.add("show");
+    }
+
+    async function runPurchaseReport() {
+      const { since, until } = getRangeInputDates();
+      try {
+        const [orders, { ingredientsList, recipeList }] = await Promise.all([
+          fetchPeriodOrders(since, until),
+          loadRecipeData(),
+        ]);
+        const report = buildPurchaseReport(orders, ingredientsList, recipeList);
+        renderPurchaseReportModal(report, since, until);
+      } catch (e) {
+        showToast("Erreur lors du calcul des achats théoriques", true);
+      }
+    }
+
+    // ---------------------------------------------------------------------
     // Saisie manuelle : permet d'ajouter après coup un total de vente pour
     // une date passée (ex. depuis le début du mois, avant la mise en place
     // de la caisse), afin qu'il soit compté dans les rapports X/Z et
@@ -1227,7 +1412,7 @@
           customer_phone: "-",
           address_or_table: null,
           special_notes: note || null,
-          items: manualCart.map((l) => ({ name: l.name, quantity: l.quantity, price: l.price })),
+          items: manualCart.map((l) => ({ dish_id: l.id, name: l.name, quantity: l.quantity, price: l.price })),
           total: manualCartTotal(),
           status: "completed",
           created_at: createdAt.toISOString(),
@@ -1389,6 +1574,7 @@
     document.getElementById("btnReportX").onclick = () => runReport("x");
     document.getElementById("btnReportZ").onclick = () => runReport("z");
     document.getElementById("btnExportCsv").onclick = exportCsv;
+    document.getElementById("btnPurchaseReport").onclick = runPurchaseReport;
     document.getElementById("btnManualEntry").onclick = openManualModal;
     document.getElementById("manualCancelBtn").onclick = closeManualModal;
     document.getElementById("manualSubmitBtn").onclick = submitManualEntry;
