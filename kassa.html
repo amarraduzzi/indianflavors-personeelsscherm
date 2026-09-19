@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Indian Flavors — Kassa</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍛</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=Bodoni+Moda:ital,wght@0,500;0,700;0,800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --gold:#c9a24b;--gold-light:#e6c878;--orange:#a67c2e;--orange-light:#d4af6a;
+    --bg:#14100c;--bg-2:#1c1611;--panel:#211a14;--panel-2:#2a221a;--panel-3:#332920;
+    --border:#3d3123;--border-light:#4a3c2c;--text:#f5ecdd;--text-dim:#b8a98f;--text-dimmer:#8a7b64;
+    --red:#c25a45;--green:#4a9c62;--blue:#5b7ac9;
+    font-family:Inter,Segoe UI,system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);min-height:100vh;}
+  a{color:inherit;text-decoration:none;}
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 24px;border-bottom:1px solid var(--border);background:var(--bg-2);
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-title{font-family:"Bodoni Moda",serif;font-weight:700;font-size:19px;color:var(--gold-light);}
+  .brand-sub{font-size:11px;letter-spacing:.08em;color:var(--text-dimmer);text-transform:uppercase;}
+  .back-link{
+    font-size:13px;color:var(--text-dim);border:1px solid var(--border-light);
+    padding:8px 14px;border-radius:8px;
+  }
+  .back-link:hover{color:var(--gold-light);border-color:var(--gold);}
+  main{
+    display:grid;grid-template-columns:1fr 380px;gap:0;height:calc(100vh - 61px);
+  }
+  @media (max-width:900px){ main{grid-template-columns:1fr;height:auto;} }
+
+  /* --- product side --- */
+  .catalog{padding:18px 22px;overflow-y:auto;}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+  .search-input{
+    flex:1;min-width:200px;background:var(--panel);border:1px solid var(--border);
+    border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;
+  }
+  .search-input:focus{outline:none;border-color:var(--gold);}
+  .cat-btn{
+    background:var(--panel);border:1px solid var(--border);color:var(--text-dim);
+    padding:9px 15px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;
+  }
+  .cat-btn.active{background:var(--gold);border-color:var(--gold);color:#241c10;}
+  .grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;
+  }
+  .dish-card{
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:14px;cursor:pointer;text-align:left;transition:border-color .15s, transform .1s;
+    color:var(--text);font-family:inherit;
+  }
+  .dish-card:hover{border-color:var(--gold);}
+  .dish-card:active{transform:scale(0.97);}
+  .dish-name{font-size:14px;font-weight:600;margin-bottom:8px;line-height:1.3;min-height:36px;}
+  .dish-price{font-size:15px;font-weight:700;color:var(--gold-light);}
+  .empty-msg{color:var(--text-dimmer);font-size:14px;padding:30px 0;text-align:center;}
+
+  /* --- cart side --- */
+  .cart{
+    background:var(--bg-2);border-left:1px solid var(--border);
+    display:flex;flex-direction:column;height:100%;
+  }
+  .cart-header{padding:18px 20px 6px;}
+  .cart-title{font-size:16px;font-weight:700;color:var(--gold-light);margin-bottom:14px;}
+  .channel-toggle{display:flex;gap:8px;margin-bottom:10px;}
+  .channel-btn{
+    flex:1;padding:9px 8px;border-radius:9px;border:1px solid var(--border);
+    background:var(--panel);color:var(--text-dim);font-size:12.5px;font-weight:700;
+    text-align:center;cursor:pointer;letter-spacing:.02em;
+  }
+  .channel-btn.active{border-color:var(--orange-light);color:var(--orange-light);background:var(--panel-3);}
+  .channel-btn.glovo.active{border-color:#ffc244;color:#ffc244;background:#3a2c12;}
+  .type-row{display:flex;gap:8px;margin-bottom:12px;}
+  .type-btn{
+    flex:1;padding:8px 6px;border-radius:8px;border:1px solid var(--border);
+    background:var(--panel);color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer;
+  }
+  .type-btn.active{background:var(--gold);border-color:var(--gold);color:#241c10;}
+  .field{margin-bottom:10px;}
+  .field label{display:block;font-size:11px;color:var(--text-dimmer);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
+  .field input, .field textarea{
+    width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    padding:8px 11px;color:var(--text);font-size:13.5px;font-family:inherit;
+  }
+  .field textarea{resize:vertical;min-height:44px;}
+  .field input:focus, .field textarea:focus{outline:none;border-color:var(--gold);}
+
+  .cart-items{flex:1;overflow-y:auto;padding:4px 20px;}
+  .cart-empty{color:var(--text-dimmer);font-size:13.5px;text-align:center;padding:30px 0;}
+  .cart-line{
+    display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);
+  }
+  .cart-line-name{flex:1;font-size:13.5px;font-weight:600;}
+  .cart-line-price{font-size:12.5px;color:var(--text-dimmer);}
+  .qty-stepper{display:flex;align-items:center;gap:6px;}
+  .qty-btn{
+    width:24px;height:24px;border-radius:6px;border:1px solid var(--border-light);
+    background:var(--panel-2);color:var(--text);font-size:14px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .qty-val{min-width:16px;text-align:center;font-size:13px;font-weight:700;}
+  .remove-x{color:var(--red);font-size:16px;cursor:pointer;padding:0 2px;}
+
+  .cart-footer{padding:16px 20px 20px;border-top:1px solid var(--border);}
+  .total-row{
+    display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;
+  }
+  .total-label{font-size:13px;color:var(--text-dim);}
+  .total-value{font-size:24px;font-weight:800;color:var(--gold-light);font-family:"Outfit",sans-serif;}
+  .submit-btn{
+    width:100%;padding:14px;border-radius:10px;border:none;background:var(--gold);
+    color:#241c10;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:8px;
+  }
+  .submit-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .print-toggle{
+    display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-dim);
+    justify-content:center;margin-top:4px;
+  }
+  .toast{
+    position:fixed;top:20px;left:50%;transform:translateX(-50%);
+    background:var(--green);color:#fff;padding:12px 22px;border-radius:10px;
+    font-size:14px;font-weight:600;box-shadow:var(--shadow);z-index:50;
+    opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;
+  }
+  .toast.error{background:var(--red);}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(6px);}
+  .locked{display:flex;align-items:center;justify-content:center;height:80vh;color:var(--text-dimmer);font-size:14px;}
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div>
+        <div class="brand-title">Indian Flavors</div>
+        <div class="brand-sub">Kassa</div>
+      </div>
+    </div>
+    <a class="back-link" href="index.html">&larr; Retour au tableau</a>
+  </header>
+
+  <main id="main" style="display:none;">
+    <section class="catalog">
+      <div class="toolbar">
+        <input class="search-input" id="search" placeholder="Rechercher un plat..." />
+      </div>
+      <div class="toolbar" id="categories"></div>
+      <div class="grid" id="grid"></div>
+      <div class="empty-msg" id="emptyMsg" style="display:none;">Aucun plat trouvé</div>
+    </section>
+
+    <aside class="cart">
+      <div class="cart-header">
+        <div class="cart-title">Nouvelle commande</div>
+        <div class="channel-toggle">
+          <div class="channel-btn active" data-channel="restaurant" id="chRestaurant">Restaurant</div>
+          <div class="channel-btn glovo" data-channel="glovo" id="chGlovo">Glovo</div>
+        </div>
+        <div class="type-row" id="typeRow">
+          <div class="type-btn active" data-type="dinein">Sur place</div>
+          <div class="type-btn" data-type="takeaway">À emporter</div>
+          <div class="type-btn" data-type="delivery">Livraison</div>
+        </div>
+        <div class="field" id="tableField">
+          <label>Table / repère</label>
+          <input id="tableInput" placeholder="ex : Table 5" />
+        </div>
+        <div class="field" id="glovoNameField" style="display:none;">
+          <label>Nom client (Glovo)</label>
+          <input id="glovoNameInput" placeholder="ex : Youssef B." />
+        </div>
+        <div class="field">
+          <label>Remarque</label>
+          <textarea id="notesInput" placeholder="ex : sans piment, allergie..."></textarea>
+        </div>
+      </div>
+
+      <div class="cart-items" id="cartItems">
+        <div class="cart-empty">Aucun article ajouté</div>
+      </div>
+
+      <div class="cart-footer">
+        <div class="total-row">
+          <span class="total-label">TOTAL</span>
+          <span class="total-value" id="totalValue">0,00 DH</span>
+        </div>
+        <button class="submit-btn" id="submitBtn" disabled>Envoyer la commande</button>
+        <label class="print-toggle">
+          <input type="checkbox" id="printToggle" checked style="accent-color:var(--gold);" />
+          Imprimer le bon automatiquement
+        </label>
+      </div>
+    </aside>
+  </main>
+
+  <div id="lockedMsg" class="locked">Connexion en cours...</div>
+  <div class="toast" id="toast"></div>
+
+  <script src="print-kassabon.js"></script>
+  <script>
+  (function () {
+    const SUPABASE_URL = "https://zzdiibzoalmymgbztepf.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_96be9YWDCuHOD9-rmGVkeg_5RTW8Jx7";
+
+    // Authenticated client: picks up the shared staff session from localStorage
+    // (same origin as index.html) — used only to verify login + read the menu.
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Separate, always-anonymous client: used only to insert orders, exactly
+    // like the public ordering website does. Keeps working regardless of the
+    // orders table's RLS policies (which currently only allow anon inserts).
+    const supabasePublic = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    let dishes = [];
+    let categories = [];
+    let activeCategory = "all";
+    let channel = "restaurant"; // restaurant | glovo
+    let orderType = "dinein"; // dinein | takeaway | delivery
+    let cart = []; // [{id, name, price, quantity}]
+
+    function showToast(msg, isError) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.className = "toast show" + (isError ? " error" : "");
+      setTimeout(() => { t.className = "toast"; }, 2200);
+    }
+
+    function money(n) {
+      return Number(n || 0).toFixed(2).replace(".", ",") + " DH";
+    }
+
+    async function requireAuth() {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        window.location.href = "index.html";
+        return false;
+      }
+      document.getElementById("lockedMsg").style.display = "none";
+      document.getElementById("main").style.display = "grid";
+      return true;
+    }
+
+    async function loadDishes() {
+      const { data, error } = await supabase
+        .from("dishes")
+        .select("id,name,category,menu_price")
+        .order("category")
+        .order("name");
+      if (error) {
+        showToast("Erreur de chargement du menu", true);
+        return;
+      }
+      dishes = (data || []).filter((d) => d.menu_price != null);
+      categories = [...new Set(dishes.map((d) => d.category || "Autre"))];
+      renderCategories();
+      renderGrid();
+    }
+
+    function renderCategories() {
+      const wrap = document.getElementById("categories");
+      wrap.innerHTML = "";
+      const all = document.createElement("div");
+      all.className = "cat-btn" + (activeCategory === "all" ? " active" : "");
+      all.textContent = "Tous";
+      all.onclick = () => { activeCategory = "all"; renderCategories(); renderGrid(); };
+      wrap.appendChild(all);
+      categories.forEach((c) => {
+        const b = document.createElement("div");
+        b.className = "cat-btn" + (activeCategory === c ? " active" : "");
+        b.textContent = c;
+        b.onclick = () => { activeCategory = c; renderCategories(); renderGrid(); };
+        wrap.appendChild(b);
+      });
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById("grid");
+      const search = (document.getElementById("search").value || "").toLowerCase().trim();
+      const filtered = dishes.filter((d) => {
+        const catOk = activeCategory === "all" || (d.category || "Autre") === activeCategory;
+        const searchOk = !search || d.name.toLowerCase().includes(search);
+        return catOk && searchOk;
+      });
+      grid.innerHTML = "";
+      document.getElementById("emptyMsg").style.display = filtered.length ? "none" : "block";
+      filtered.forEach((d) => {
+        const card = document.createElement("button");
+        card.className = "dish-card";
+        card.innerHTML = `<div class="dish-name">${escapeHtml(d.name)}</div><div class="dish-price">${money(d.menu_price)}</div>`;
+        card.onclick = () => addToCart(d);
+        grid.appendChild(card);
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function addToCart(dish) {
+      const line = cart.find((l) => l.id === dish.id);
+      if (line) { line.quantity += 1; }
+      else { cart.push({ id: dish.id, name: dish.name, price: dish.menu_price, quantity: 1 }); }
+      renderCart();
+    }
+
+    function changeQty(id, delta) {
+      const line = cart.find((l) => l.id === id);
+      if (!line) return;
+      line.quantity += delta;
+      if (line.quantity <= 0) cart = cart.filter((l) => l.id !== id);
+      renderCart();
+    }
+
+    function cartTotal() {
+      return cart.reduce((sum, l) => sum + l.price * l.quantity, 0);
+    }
+
+    function renderCart() {
+      const wrap = document.getElementById("cartItems");
+      wrap.innerHTML = "";
+      if (!cart.length) {
+        wrap.innerHTML = '<div class="cart-empty">Aucun article ajouté</div>';
+      } else {
+        cart.forEach((l) => {
+          const row = document.createElement("div");
+          row.className = "cart-line";
+          row.innerHTML = `
+            <div style="flex:1;">
+              <div class="cart-line-name">${escapeHtml(l.name)}</div>
+              <div class="cart-line-price">${money(l.price)} / unité</div>
+            </div>
+            <div class="qty-stepper">
+              <div class="qty-btn" data-act="dec">&minus;</div>
+              <div class="qty-val">${l.quantity}</div>
+              <div class="qty-btn" data-act="inc">+</div>
+            </div>
+            <div class="remove-x" data-act="rm">&times;</div>
+          `;
+          row.querySelector('[data-act="dec"]').onclick = () => changeQty(l.id, -1);
+          row.querySelector('[data-act="inc"]').onclick = () => changeQty(l.id, 1);
+          row.querySelector('[data-act="rm"]').onclick = () => { cart = cart.filter((x) => x.id !== l.id); renderCart(); };
+          wrap.appendChild(row);
+        });
+      }
+      document.getElementById("totalValue").textContent = money(cartTotal());
+      document.getElementById("submitBtn").disabled = cart.length === 0;
+    }
+
+    function setChannel(c) {
+      channel = c;
+      document.getElementById("chRestaurant").classList.toggle("active", c === "restaurant");
+      document.getElementById("chGlovo").classList.toggle("active", c === "glovo");
+      document.getElementById("tableField").style.display = c === "restaurant" ? "block" : "none";
+      document.getElementById("glovoNameField").style.display = c === "glovo" ? "block" : "none";
+      document.getElementById("typeRow").style.display = c === "restaurant" ? "flex" : "none";
+      if (c === "glovo") orderType = "delivery";
+    }
+
+    function setOrderType(t) {
+      orderType = t;
+      document.querySelectorAll(".type-btn").forEach((b) => {
+        b.classList.toggle("active", b.dataset.type === t);
+      });
+    }
+
+    async function submitOrder() {
+      if (!cart.length) return;
+      const btn = document.getElementById("submitBtn");
+      btn.disabled = true;
+      btn.textContent = "Envoi...";
+
+      const total = cartTotal();
+      const items = cart.map((l) => ({ name: l.name, quantity: l.quantity, price: l.price }));
+      const notes = document.getElementById("notesInput").value.trim() || null;
+
+      let customerName, customerPhone, addressOrTable;
+      if (channel === "glovo") {
+        const glovoName = document.getElementById("glovoNameInput").value.trim();
+        customerName = "GLOVO" + (glovoName ? " - " + glovoName : "");
+        customerPhone = "-";
+        addressOrTable = "Glovo";
+      } else {
+        const table = document.getElementById("tableInput").value.trim();
+        customerName = orderType === "dinein" ? "Salle (Kassa)" : "Comptoir (Kassa)";
+        customerPhone = "-";
+        addressOrTable = table || null;
+      }
+
+      const payload = {
+        order_type: orderType,
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        address_or_table: addressOrTable,
+        special_notes: notes,
+        items,
+        total,
+        status: "pending",
+      };
+
+      const { data, error } = await supabasePublic.from("orders").insert(payload).select().single();
+
+      btn.textContent = "Envoyer la commande";
+      btn.disabled = cart.length === 0;
+
+      if (error) {
+        showToast("Erreur : commande non envoyée", true);
+        return;
+      }
+
+      showToast("Commande envoyée !");
+
+      if (document.getElementById("printToggle").checked && window.printOrder) {
+        window.printOrder({
+          id: data.id ? String(data.id).slice(0, 8) : "",
+          table: addressOrTable || "",
+          items: items.map((it) => ({ name: it.name, qty: it.quantity, price: it.price })),
+          total,
+          note: notes || "",
+        });
+      }
+
+      cart = [];
+      document.getElementById("tableInput").value = "";
+      document.getElementById("glovoNameInput").value = "";
+      document.getElementById("notesInput").value = "";
+      renderCart();
+    }
+
+    document.getElementById("chRestaurant").onclick = () => setChannel("restaurant");
+    document.getElementById("chGlovo").onclick = () => setChannel("glovo");
+    document.querySelectorAll(".type-btn").forEach((b) => {
+      b.onclick = () => setOrderType(b.dataset.type);
+    });
+    document.getElementById("search").addEventListener("input", renderGrid);
+    document.getElementById("submitBtn").onclick = submitOrder;
+
+    (async function init() {
+      const ok = await requireAuth();
+      if (!ok) return;
+      await loadDishes();
+      renderCart();
+    })();
+  })();
+  </script>
+</body>
+</html>
