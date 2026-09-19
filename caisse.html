@@ -36,6 +36,8 @@
   .report-btn.z{color:var(--red);}
   .report-btn.z:hover{color:#ff8f75;border-color:var(--red);}
   .report-btn.manual{color:var(--gold-light);border-color:var(--gold);}
+  .report-btn.glovo-prices{color:#ffc244;border-color:#8a6a1f;}
+  .report-btn.glovo-prices:hover{color:#ffc244;border-color:#ffc244;}
   .range-field{
     display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dimmer);
     text-transform:uppercase;letter-spacing:.05em;
@@ -75,6 +77,10 @@
   .dish-card:active{transform:scale(0.97);}
   .dish-name{font-size:14px;font-weight:600;margin-bottom:8px;line-height:1.3;min-height:36px;}
   .dish-price{font-size:15px;font-weight:700;color:var(--gold-light);}
+  .dish-price.glovo-price{color:#ffc244;}
+  .dish-unavailable{opacity:.4;cursor:not-allowed;}
+  .dish-unavailable:hover{border-color:var(--border);}
+  .dish-flag{font-size:10.5px;color:var(--text-dimmer);text-transform:uppercase;letter-spacing:.04em;margin-top:4px;}
   .empty-msg{color:var(--text-dimmer);font-size:14px;padding:30px 0;text-align:center;}
 
   /* --- cart side --- */
@@ -170,6 +176,35 @@
   }
   .modal-actions button.primary{background:var(--gold);color:#241c10;border-color:var(--gold);}
   .modal-actions button.danger{background:var(--red);color:#fff;border-color:var(--red);}
+
+  .modal.wide{max-width:760px;}
+  .glovo-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px;}
+  .glovo-toolbar input{
+    flex:1;background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    padding:8px 12px;color:var(--text);font-size:13.5px;font-family:inherit;
+  }
+  .glovo-toolbar input:focus{outline:none;border-color:var(--gold);}
+  .glovo-count{font-size:12px;color:var(--text-dimmer);white-space:nowrap;}
+  .glovo-table{width:100%;border-collapse:collapse;}
+  .glovo-table th{
+    text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+    color:var(--text-dimmer);padding:6px 8px;border-bottom:1px solid var(--border-light);position:sticky;top:0;background:var(--bg-2);
+  }
+  .glovo-table td{padding:7px 8px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+  .glovo-table tr.cat-row td{
+    padding-top:14px;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--text-dimmer);border-bottom:none;
+  }
+  .glovo-table .menu-price-cell{color:var(--text-dim);white-space:nowrap;}
+  .glovo-price-input{
+    width:78px;background:var(--panel);border:1px solid var(--border);border-radius:7px;
+    padding:6px 8px;color:#ffc244;font-size:13px;font-family:inherit;font-weight:700;
+  }
+  .glovo-price-input:focus{outline:none;border-color:#ffc244;}
+  .glovo-price-input.empty{color:var(--text-dimmer);font-weight:400;}
+  .glovo-save-state{font-size:11px;color:var(--text-dimmer);min-width:60px;display:inline-block;}
+  .glovo-save-state.ok{color:var(--green);}
+  .glovo-save-state.err{color:var(--red);}
 </style>
 </head>
 <body>
@@ -191,6 +226,7 @@
       <button class="report-btn z" id="btnReportZ">Rapport Z</button>
       <button class="report-btn" id="btnExportCsv">Export CSV</button>
       <button class="report-btn manual" id="btnManualEntry">+ Saisie manuelle</button>
+      <button class="report-btn glovo-prices" id="btnGlovoPrices">Prix Glovo</button>
       <a class="back-link" href="index.html">&larr; Retour au tableau</a>
     </div>
   </header>
@@ -304,6 +340,36 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="glovoModal">
+    <div class="modal wide">
+      <h2>Prix Glovo</h2>
+      <div class="modal-sub">
+        Chaque plat peut avoir un prix différent sur Glovo. Laisse le champ vide
+        pour un plat qui n'est pas vendu sur Glovo — dans ce cas, il n'apparaît
+        pas dans le catalogue quand le canal "Glovo" est sélectionné en caisse.
+        Les modifications sont enregistrées automatiquement.
+      </div>
+      <div class="glovo-toolbar">
+        <input id="glovoSearch" placeholder="Rechercher un plat..." />
+        <span class="glovo-count" id="glovoCount"></span>
+      </div>
+      <table class="glovo-table">
+        <thead>
+          <tr>
+            <th>Plat</th>
+            <th>Prix restaurant</th>
+            <th>Prix Glovo</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="glovoTableBody"></tbody>
+      </table>
+      <div class="modal-actions">
+        <button id="glovoCloseBtn">Fermer</button>
+      </div>
+    </div>
+  </div>
+
   <script src="print-ticket.js"></script>
   <script>
   (function () {
@@ -355,7 +421,7 @@
     async function loadDishes() {
       const { data, error } = await supabase
         .from("dishes")
-        .select("id,name,category,menu_price")
+        .select("id,name,category,menu_price,glovo_price")
         .order("category")
         .order("name");
       if (error) {
@@ -366,6 +432,19 @@
       categories = [...new Set(dishes.map((d) => d.category || "Autre"))];
       renderCategories();
       renderGrid();
+    }
+
+    // Prix à utiliser pour un plat selon le canal de vente actif. Sur Glovo,
+    // seuls les plats avec un glovo_price défini sont vendables (les prix
+    // Glovo diffèrent souvent des prix restaurant — voir le bouton "Prix
+    // Glovo" dans l'en-tête pour les configurer).
+    function priceForChannel(dish, ch) {
+      if ((ch || channel) === "glovo") return dish.glovo_price;
+      return dish.menu_price;
+    }
+
+    function availableForChannel(dish, ch) {
+      return priceForChannel(dish, ch) != null;
     }
 
     function renderCategories() {
@@ -396,10 +475,16 @@
       grid.innerHTML = "";
       document.getElementById("emptyMsg").style.display = filtered.length ? "none" : "block";
       filtered.forEach((d) => {
+        const price = priceForChannel(d);
+        const available = price != null;
         const card = document.createElement("button");
-        card.className = "dish-card";
-        card.innerHTML = `<div class="dish-name">${escapeHtml(d.name)}</div><div class="dish-price">${money(d.menu_price)}</div>`;
-        card.onclick = () => addToCart(d);
+        card.className = "dish-card" + (available ? "" : " dish-unavailable");
+        const priceHtml = available
+          ? `<div class="dish-price${channel === "glovo" ? " glovo-price" : ""}">${money(price)}</div>`
+          : `<div class="dish-price">—</div><div class="dish-flag">Non dispo sur Glovo</div>`;
+        card.innerHTML = `<div class="dish-name">${escapeHtml(d.name)}</div>${priceHtml}`;
+        card.disabled = !available;
+        card.onclick = () => { if (available) addToCart(d); };
         grid.appendChild(card);
       });
     }
@@ -409,9 +494,28 @@
     }
 
     function addToCart(dish) {
+      const price = priceForChannel(dish);
+      if (price == null) return; // pas de prix pour ce canal (ex : pas sur Glovo)
       const line = cart.find((l) => l.id === dish.id);
       if (line) { line.quantity += 1; }
-      else { cart.push({ id: dish.id, name: dish.name, price: dish.menu_price, quantity: 1 }); }
+      else { cart.push({ id: dish.id, name: dish.name, price, quantity: 1 }); }
+      renderCart();
+    }
+
+    // Recalcule le prix de chaque ligne du panier selon le canal actif.
+    // Appelé quand on bascule Restaurant <-> Glovo, pour que le panier
+    // reflète toujours le bon tarif. Un article sans prix sur le nouveau
+    // canal (ex. pas vendu sur Glovo) est retiré du panier.
+    function resyncCartPrices() {
+      cart = cart
+        .map((l) => {
+          const dish = dishes.find((d) => d.id === l.id);
+          if (!dish) return l;
+          const price = priceForChannel(dish);
+          if (price == null) return null;
+          return { ...l, price };
+        })
+        .filter(Boolean);
       renderCart();
     }
 
@@ -459,6 +563,7 @@
     }
 
     function setChannel(c) {
+      const changed = c !== channel;
       channel = c;
       document.getElementById("chRestaurant").classList.toggle("active", c === "restaurant");
       document.getElementById("chGlovo").classList.toggle("active", c === "glovo");
@@ -466,6 +571,8 @@
       document.getElementById("glovoNameField").style.display = c === "glovo" ? "block" : "none";
       document.getElementById("typeRow").style.display = c === "restaurant" ? "flex" : "none";
       if (c === "glovo") orderType = "delivery";
+      renderGrid();
+      if (changed && cart.length) resyncCartPrices();
     }
 
     function setOrderType(t) {
@@ -904,6 +1011,101 @@
       showToast("Saisie manuelle ajoutée");
       closeManualModal();
     }
+
+    // ---------------------------------------------------------------------
+    // Prix Glovo : gestion des prix spécifiques à Glovo, plat par plat.
+    // Le prix restaurant (menu_price) reste inchangé ; glovo_price est un
+    // second prix optionnel, utilisé uniquement quand le canal "Glovo" est
+    // sélectionné en caisse. Un plat sans glovo_price n'est pas proposé
+    // côté Glovo (voir priceForChannel / renderGrid).
+    // ---------------------------------------------------------------------
+
+    let glovoSearchTerm = "";
+
+    function openGlovoModal() {
+      glovoSearchTerm = "";
+      document.getElementById("glovoSearch").value = "";
+      renderGlovoTable();
+      document.getElementById("glovoModal").classList.add("show");
+    }
+
+    function closeGlovoModal() {
+      document.getElementById("glovoModal").classList.remove("show");
+    }
+
+    function renderGlovoTable() {
+      const body = document.getElementById("glovoTableBody");
+      const term = glovoSearchTerm.toLowerCase().trim();
+      const filtered = dishes.filter((d) => !term || d.name.toLowerCase().includes(term));
+      document.getElementById("glovoCount").textContent =
+        filtered.filter((d) => d.glovo_price != null).length + " / " + filtered.length + " sur Glovo";
+
+      body.innerHTML = "";
+      let lastCat = null;
+      filtered.forEach((d) => {
+        const cat = d.category || "Autre";
+        if (cat !== lastCat) {
+          lastCat = cat;
+          const catRow = document.createElement("tr");
+          catRow.className = "cat-row";
+          catRow.innerHTML = `<td colspan="4">${escapeHtml(cat)}</td>`;
+          body.appendChild(catRow);
+        }
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${escapeHtml(d.name)}</td>
+          <td class="menu-price-cell">${money(d.menu_price)}</td>
+          <td>
+            <input type="number" min="0" step="0.01" class="glovo-price-input${d.glovo_price == null ? " empty" : ""}"
+              value="${d.glovo_price != null ? d.glovo_price : ""}" placeholder="—" />
+          </td>
+          <td><span class="glovo-save-state"></span></td>
+        `;
+        const input = row.querySelector(".glovo-price-input");
+        const stateEl = row.querySelector(".glovo-save-state");
+        input.addEventListener("change", () => saveGlovoPrice(d, input, stateEl));
+        body.appendChild(row);
+      });
+    }
+
+    let glovoSaveTimer = null;
+    async function saveGlovoPrice(dish, input, stateEl) {
+      const raw = input.value.trim();
+      const value = raw === "" ? null : parseFloat(raw);
+      if (raw !== "" && (isNaN(value) || value < 0)) {
+        stateEl.textContent = "Valeur invalide";
+        stateEl.className = "glovo-save-state err";
+        return;
+      }
+      stateEl.textContent = "Enregistrement...";
+      stateEl.className = "glovo-save-state";
+      const { error } = await supabase.from("dishes").update({ glovo_price: value }).eq("id", dish.id);
+      if (error) {
+        stateEl.textContent = "Erreur";
+        stateEl.className = "glovo-save-state err";
+        return;
+      }
+      dish.glovo_price = value;
+      input.classList.toggle("empty", value == null);
+      stateEl.textContent = "Enregistré";
+      stateEl.className = "glovo-save-state ok";
+      clearTimeout(glovoSaveTimer);
+      glovoSaveTimer = setTimeout(() => { stateEl.textContent = ""; }, 1800);
+      document.getElementById("glovoCount").textContent =
+        dishes.filter((d) => d.glovo_price != null).length + " / " + dishes.length + " sur Glovo";
+      renderGrid();
+      if (cart.length) resyncCartPrices();
+    }
+
+    document.getElementById("btnGlovoPrices").onclick = openGlovoModal;
+    document.getElementById("glovoCloseBtn").onclick = closeGlovoModal;
+    document.getElementById("glovoSearch").addEventListener("input", (e) => {
+      glovoSearchTerm = e.target.value;
+      renderGlovoTable();
+    });
+    document.getElementById("glovoModal").addEventListener("click", (e) => {
+      if (e.target.id === "glovoModal") closeGlovoModal();
+    });
 
     document.getElementById("chRestaurant").onclick = () => setChannel("restaurant");
     document.getElementById("chGlovo").onclick = () => setChannel("glovo");
