@@ -98,6 +98,13 @@
   }
   .channel-btn.active{border-color:var(--orange-light);color:var(--orange-light);background:var(--panel-3);}
   .channel-btn.glovo.active{border-color:#ffc244;color:#ffc244;background:#3a2c12;}
+  .payment-toggle{display:flex;gap:8px;margin-bottom:12px;}
+  .payment-btn{
+    flex:1;padding:9px 8px;border-radius:9px;border:1px solid var(--border);
+    background:var(--panel);color:var(--text-dim);font-size:12.5px;font-weight:700;
+    text-align:center;cursor:pointer;letter-spacing:.02em;
+  }
+  .payment-btn.active{border-color:var(--green);color:var(--green);background:var(--panel-3);}
   .type-row{display:flex;gap:8px;margin-bottom:12px;}
   .type-btn{
     flex:1;padding:8px 6px;border-radius:8px;border:1px solid var(--border);
@@ -265,6 +272,13 @@
           <label>Remarque</label>
           <textarea id="notesInput" placeholder="ex : sans piment, allergie..."></textarea>
         </div>
+        <div class="field">
+          <label>Mode de paiement</label>
+          <div class="payment-toggle">
+            <div class="payment-btn active" data-payment="cash" id="payCash">Espèces</div>
+            <div class="payment-btn" data-payment="card" id="payCard">Carte bancaire</div>
+          </div>
+        </div>
       </div>
 
       <div class="cart-items" id="cartItems">
@@ -324,6 +338,14 @@
       <div class="field">
         <label>Nombre de commandes</label>
         <input type="number" id="manualCount" min="1" value="1" />
+      </div>
+      <div class="field">
+        <label>Mode de paiement</label>
+        <select id="manualPayment">
+          <option value="cash">Espèces</option>
+          <option value="card">Carte bancaire</option>
+          <option value="mixed">Mixte / non renseigné</option>
+        </select>
       </div>
       <div class="field">
         <label>Montant total (DH)</label>
@@ -394,6 +416,7 @@
     let activeCategory = "all";
     let channel = "restaurant"; // restaurant | glovo
     let orderType = "dinein"; // dinein | takeaway | delivery
+    let paymentMethod = "cash"; // cash | card
     let cart = []; // [{id, name, price, quantity}]
 
     function showToast(msg, isError) {
@@ -582,6 +605,12 @@
       });
     }
 
+    function setPaymentMethod(m) {
+      paymentMethod = m;
+      document.getElementById("payCash").classList.toggle("active", m === "cash");
+      document.getElementById("payCard").classList.toggle("active", m === "card");
+    }
+
     async function submitOrder() {
       if (!cart.length) return;
       const btn = document.getElementById("submitBtn");
@@ -614,6 +643,7 @@
         items,
         total,
         status: "pending",
+        payment_method: paymentMethod,
       };
 
       // Note: intentionally NOT chaining .select() here. Asking PostgREST to
@@ -649,6 +679,7 @@
       document.getElementById("tableInput").value = "";
       document.getElementById("glovoNameInput").value = "";
       document.getElementById("notesInput").value = "";
+      setPaymentMethod("cash");
       renderCart();
     }
 
@@ -696,6 +727,12 @@
       return 1;
     }
 
+    const PAYMENT_LABELS = { cash: "Espèces", card: "Carte bancaire", mixed: "Mixte / non renseigné" };
+
+    function classifyPayment(o) {
+      return PAYMENT_LABELS[o.payment_method] || "Non renseigné";
+    }
+
     function classifyChannel(o) {
       const name = (o.customer_name || "").trim();
       if (isManualEntry(o)) return "Saisie manuelle";
@@ -708,7 +745,7 @@
     async function fetchPeriodOrders(since, until) {
       let q = supabase
         .from("orders")
-        .select("id,order_type,customer_name,address_or_table,items,total,status,created_at")
+        .select("id,order_type,customer_name,address_or_table,items,total,status,created_at,payment_method")
         .gte("created_at", since.toISOString());
       if (until) q = q.lte("created_at", until.toISOString());
       const { data, error } = await q.order("created_at", { ascending: true });
@@ -722,12 +759,14 @@
 
       const byChannel = {};
       const byType = {};
+      const byPayment = {};
       let revenue = 0;
       let orderCount = 0;
 
       valid.forEach((o) => {
         const ch = classifyChannel(o);
         const ty = o.order_type || "autre";
+        const pay = classifyPayment(o);
         const amount = Number(o.total || 0);
         const cnt = orderCountFor(o);
         revenue += amount;
@@ -738,6 +777,9 @@
         byType[ty] = byType[ty] || { count: 0, revenue: 0 };
         byType[ty].count += cnt;
         byType[ty].revenue += amount;
+        byPayment[pay] = byPayment[pay] || { count: 0, revenue: 0 };
+        byPayment[pay].count += cnt;
+        byPayment[pay].revenue += amount;
       });
 
       return {
@@ -749,6 +791,7 @@
         avgBasket: orderCount ? revenue / orderCount : 0,
         byChannel,
         byType,
+        byPayment,
         orders,
       };
     }
@@ -781,6 +824,12 @@
         lines.push((TYPE_LABELS[ty] || ty) + " : " + r.count + " cmd. - " + money(r.revenue));
       });
       lines.push("------------------------------");
+      lines.push("PAR PAIEMENT");
+      Object.keys(report.byPayment).forEach((pay) => {
+        const r = report.byPayment[pay];
+        lines.push(pay + " : " + r.count + " cmd. - " + money(r.revenue));
+      });
+      lines.push("------------------------------");
       lines.push("TOTAL : " + money(report.revenue));
       return lines;
     }
@@ -809,6 +858,12 @@
       Object.keys(report.byType).forEach((ty) => {
         const r = report.byType[ty];
         html += `<div class="report-line"><span>${escapeHtml(TYPE_LABELS[ty] || ty)} (${r.count})</span><span>${money(r.revenue)}</span></div>`;
+      });
+
+      html += `<div class="report-section-title">Par paiement</div>`;
+      Object.keys(report.byPayment).forEach((pay) => {
+        const r = report.byPayment[pay];
+        html += `<div class="report-line"><span>${escapeHtml(pay)} (${r.count})</span><span>${money(r.revenue)}</span></div>`;
       });
 
       html += `<div class="report-line total"><span>TOTAL</span><span>${money(report.revenue)}</span></div>`;
@@ -891,7 +946,7 @@
       const { since, until } = getRangeInputDates();
       try {
         const orders = await fetchPeriodOrders(since, until);
-        const header = ["Date", "Heure", "Canal", "Type", "Table / Adresse", "Articles", "Commandes", "Total (DH)", "Statut"];
+        const header = ["Date", "Heure", "Canal", "Type", "Paiement", "Table / Adresse", "Articles", "Commandes", "Total (DH)", "Statut"];
         const rows = orders.map((o) => {
           const created = new Date(o.created_at);
           const itemsStr = Array.isArray(o.items)
@@ -902,6 +957,7 @@
             created.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
             classifyChannel(o),
             TYPE_LABELS[o.order_type] || o.order_type || "",
+            classifyPayment(o),
             o.address_or_table || "",
             itemsStr,
             orderCountFor(o),
@@ -943,6 +999,7 @@
       document.getElementById("manualCount").value = 1;
       document.getElementById("manualAmount").value = "";
       document.getElementById("manualNote").value = "";
+      document.getElementById("manualPayment").value = "cash";
       document.getElementById("manualModal").classList.add("show");
     }
 
@@ -970,6 +1027,7 @@
       const count = Math.max(1, parseInt(document.getElementById("manualCount").value, 10) || 1);
       const channelSel = document.getElementById("manualChannel").value;
       const note = document.getElementById("manualNote").value.trim();
+      const paymentSel = document.getElementById("manualPayment").value;
 
       if (!dateVal || isNaN(amount) || amount <= 0) {
         showToast("Date et montant requis", true);
@@ -992,6 +1050,7 @@
         total: amount,
         status: "completed",
         created_at: createdAt.toISOString(),
+        payment_method: paymentSel,
       };
 
       const btn = document.getElementById("manualSubmitBtn");
@@ -1112,6 +1171,8 @@
     document.querySelectorAll(".type-btn").forEach((b) => {
       b.onclick = () => setOrderType(b.dataset.type);
     });
+    document.getElementById("payCash").onclick = () => setPaymentMethod("cash");
+    document.getElementById("payCard").onclick = () => setPaymentMethod("card");
     document.getElementById("search").addEventListener("input", renderGrid);
     document.getElementById("submitBtn").onclick = submitOrder;
     document.getElementById("btnReportX").onclick = () => runReport("x");
