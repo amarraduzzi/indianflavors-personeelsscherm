@@ -142,6 +142,7 @@
   }
   .total-label{font-size:13px;color:var(--text-dim);}
   .total-value{font-size:24px;font-weight:800;color:var(--gold-light);font-family:"Outfit",sans-serif;}
+  .vat-breakdown{font-size:11px;color:var(--text-dimmer);text-align:right;margin-bottom:14px;margin-top:-8px;}
   .submit-btn{
     width:100%;padding:14px;border-radius:10px;border:none;background:var(--gold);
     color:#241c10;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:8px;
@@ -287,9 +288,10 @@
 
       <div class="cart-footer">
         <div class="total-row">
-          <span class="total-label">TOTAL</span>
+          <span class="total-label">TOTAL (TTC)</span>
           <span class="total-value" id="totalValue">0,00 DH</span>
         </div>
+        <div class="vat-breakdown" id="vatBreakdown">dont TVA (10%) : 0,00 DH · HT : 0,00 DH</div>
         <button class="submit-btn" id="submitBtn" disabled>Envoyer la commande</button>
         <label class="print-toggle">
           <input type="checkbox" id="printToggle" checked style="accent-color:var(--gold);" />
@@ -398,6 +400,18 @@
     const SUPABASE_URL = "https://zzdiibzoalmymgbztepf.supabase.co";
     const SUPABASE_KEY = "sb_publishable_96be9YWDCuHOD9-rmGVkeg_5RTW8Jx7";
     const LAST_Z_KEY = "if_caisse_last_z_close";
+
+    // Tous les montants stockés/affichés dans le système (menu_price,
+    // glovo_price, total des commandes) sont TTC (TVA incluse). Le Maroc
+    // applique un taux de 10% sur la restauration. Ce taux est centralisé
+    // ici : à changer à un seul endroit si le taux évolue un jour.
+    const VAT_RATE = 0.10;
+    function htFromTtc(ttc) {
+      return Number(ttc || 0) / (1 + VAT_RATE);
+    }
+    function tvaFromTtc(ttc) {
+      return Number(ttc || 0) - htFromTtc(ttc);
+    }
 
     // Authenticated client: picks up the shared staff session from localStorage
     // (same origin as index.html) — used to verify login, read the menu, and
@@ -581,7 +595,10 @@
           wrap.appendChild(row);
         });
       }
-      document.getElementById("totalValue").textContent = money(cartTotal());
+      const total = cartTotal();
+      document.getElementById("totalValue").textContent = money(total);
+      document.getElementById("vatBreakdown").textContent =
+        "dont TVA (10%) : " + money(tvaFromTtc(total)) + " · HT : " + money(htFromTtc(total));
       document.getElementById("submitBtn").disabled = cart.length === 0;
     }
 
@@ -830,7 +847,9 @@
         lines.push(pay + " : " + r.count + " cmd. - " + money(r.revenue));
       });
       lines.push("------------------------------");
-      lines.push("TOTAL : " + money(report.revenue));
+      lines.push("TOTAL TTC : " + money(report.revenue));
+      lines.push("dont TVA (10%) : " + money(tvaFromTtc(report.revenue)));
+      lines.push("Total HT : " + money(htFromTtc(report.revenue)));
       return lines;
     }
 
@@ -866,7 +885,10 @@
         html += `<div class="report-line"><span>${escapeHtml(pay)} (${r.count})</span><span>${money(r.revenue)}</span></div>`;
       });
 
-      html += `<div class="report-line total"><span>TOTAL</span><span>${money(report.revenue)}</span></div>`;
+      html += `<div class="report-section-title">TVA (10%, incluse dans les totaux)</div>`;
+      html += `<div class="report-line"><span>Total HT</span><span>${money(htFromTtc(report.revenue))}</span></div>`;
+      html += `<div class="report-line"><span>TVA (10%)</span><span>${money(tvaFromTtc(report.revenue))}</span></div>`;
+      html += `<div class="report-line total"><span>TOTAL TTC</span><span>${money(report.revenue)}</span></div>`;
       body.innerHTML = html;
 
       const actions = document.getElementById("reportActions");
@@ -946,7 +968,7 @@
       const { since, until } = getRangeInputDates();
       try {
         const orders = await fetchPeriodOrders(since, until);
-        const header = ["Date", "Heure", "Canal", "Type", "Paiement", "Table / Adresse", "Articles", "Commandes", "Total (DH)", "Statut"];
+        const header = ["Date", "Heure", "Canal", "Type", "Paiement", "Table / Adresse", "Articles", "Commandes", "Total TTC (DH)", "Total HT (DH)", "TVA 10% (DH)", "Statut"];
         const rows = orders.map((o) => {
           const created = new Date(o.created_at);
           const itemsStr = Array.isArray(o.items)
@@ -962,6 +984,8 @@
             itemsStr,
             orderCountFor(o),
             Number(o.total || 0).toFixed(2),
+            htFromTtc(o.total).toFixed(2),
+            tvaFromTtc(o.total).toFixed(2),
             o.status || "",
           ];
         });

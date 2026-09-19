@@ -26,6 +26,16 @@
 (function () {
   const PAPER_WIDTH_MM = 80; // remplacer par 58 pour une imprimante à rouleau 58mm
 
+  // Tous les montants sont TTC (TVA incluse). Taux TVA restauration au
+  // Maroc : 10%. Centralisé ici pour rester cohérent avec caisse.html.
+  const VAT_RATE = 0.10;
+  function htFromTtc(ttc) {
+    return Number(ttc || 0) / (1 + VAT_RATE);
+  }
+  function tvaFromTtc(ttc) {
+    return Number(ttc || 0) - htFromTtc(ttc);
+  }
+
   function escapeHtml(str) {
     return String(str)
       .replace(/&/g, "&amp;")
@@ -117,6 +127,12 @@
               font-size: 19px;
               margin-top: 10px;
             }
+            .vat-row {
+              text-align: right;
+              font-size: 12px;
+              font-weight: normal;
+              margin-top: 2px;
+            }
             .note {
               margin-top: 10px;
               font-size: 14px;
@@ -143,9 +159,10 @@
           </table>
           <hr />
           <div class="total-row">
-            <span>TOTAL</span>
+            <span>TOTAL (TTC)</span>
             <span>${formatPrice(total)}</span>
           </div>
+          <div class="vat-row">dont TVA (10%) : ${formatPrice(tvaFromTtc(total))} &middot; HT : ${formatPrice(htFromTtc(total))}</div>
           ${order.note ? `<div class="note">Remarque : ${escapeHtml(order.note)}</div>` : ""}
           <div class="footer">Merci !</div>
         </body>
