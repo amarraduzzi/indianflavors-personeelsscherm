@@ -35,6 +35,16 @@
   .back-link:hover, .report-btn:hover{color:var(--gold-light);border-color:var(--gold);}
   .report-btn.z{color:var(--red);}
   .report-btn.z:hover{color:#ff8f75;border-color:var(--red);}
+  .report-btn.manual{color:var(--gold-light);border-color:var(--gold);}
+  .range-field{
+    display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dimmer);
+    text-transform:uppercase;letter-spacing:.05em;
+  }
+  .range-field input{
+    background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    padding:6px 8px;color:var(--text);font-size:12.5px;font-family:inherit;
+  }
+  .range-field input:focus{outline:none;border-color:var(--gold);}
   main{
     display:grid;grid-template-columns:1fr 380px;gap:0;height:calc(100vh - 61px);
   }
@@ -90,12 +100,12 @@
   .type-btn.active{background:var(--gold);border-color:var(--gold);color:#241c10;}
   .field{margin-bottom:10px;}
   .field label{display:block;font-size:11px;color:var(--text-dimmer);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
-  .field input, .field textarea{
+  .field input, .field textarea, .field select{
     width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;
     padding:8px 11px;color:var(--text);font-size:13.5px;font-family:inherit;
   }
   .field textarea{resize:vertical;min-height:44px;}
-  .field input:focus, .field textarea:focus{outline:none;border-color:var(--gold);}
+  .field input:focus, .field textarea:focus, .field select:focus{outline:none;border-color:var(--gold);}
 
   .cart-items{flex:1;overflow-y:auto;padding:4px 20px;}
   .cart-empty{color:var(--text-dimmer);font-size:13.5px;text-align:center;padding:30px 0;}
@@ -171,9 +181,16 @@
       </div>
     </div>
     <div class="header-actions">
+      <div class="range-field">
+        <label>Du</label>
+        <input type="date" id="rangeFrom" />
+        <label>Au</label>
+        <input type="date" id="rangeTo" />
+      </div>
       <button class="report-btn" id="btnReportX">Rapport X</button>
       <button class="report-btn z" id="btnReportZ">Rapport Z</button>
       <button class="report-btn" id="btnExportCsv">Export CSV</button>
+      <button class="report-btn manual" id="btnManualEntry">+ Saisie manuelle</button>
       <a class="back-link" href="index.html">&larr; Retour au tableau</a>
     </div>
   </header>
@@ -241,6 +258,49 @@
       <div class="modal-sub" id="reportSub"></div>
       <div id="reportBody"></div>
       <div class="modal-actions" id="reportActions"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="manualModal">
+    <div class="modal">
+      <h2>Saisie manuelle</h2>
+      <div class="modal-sub">
+        Ajoute un total de vente pour une date passée (ex. depuis le début du mois),
+        pour qu'il soit compté dans les rapports et l'export CSV.
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="manualDate" />
+      </div>
+      <div class="field">
+        <label>Heure</label>
+        <input type="time" id="manualTime" />
+      </div>
+      <div class="field">
+        <label>Canal</label>
+        <select id="manualChannel">
+          <option value="dinein">Salle (sur place)</option>
+          <option value="takeaway">Comptoir (à emporter)</option>
+          <option value="delivery-glovo">Glovo</option>
+          <option value="delivery-site">Site web / Livraison</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Nombre de commandes</label>
+        <input type="number" id="manualCount" min="1" value="1" />
+      </div>
+      <div class="field">
+        <label>Montant total (DH)</label>
+        <input type="number" id="manualAmount" min="0" step="0.01" placeholder="ex : 1250" />
+      </div>
+      <div class="field">
+        <label>Description / note</label>
+        <textarea id="manualNote" placeholder="ex : ventes du 1 au 5 sept, compteur papier"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="primary" id="manualSubmitBtn">Ajouter</button>
+        <button id="manualCancelBtn">Annuler</button>
+      </div>
     </div>
   </div>
 
@@ -512,20 +572,39 @@
       return midnight;
     }
 
+    function isManualEntry(o) {
+      return (o.customer_name || "").trim().startsWith("Saisie manuelle");
+    }
+
+    // Nombre de commandes représentées par une ligne. Pour une commande
+    // normale, c'est toujours 1. Pour une saisie manuelle groupée (ex. le
+    // total d'une journée entière), le nombre réel de commandes est stocké
+    // dans items[0].manualCount, afin que le compteur du rapport reste
+    // représentatif même si tout est entré en une seule ligne.
+    function orderCountFor(o) {
+      if (isManualEntry(o) && Array.isArray(o.items) && o.items[0] && o.items[0].manualCount) {
+        const n = Number(o.items[0].manualCount);
+        if (n > 0) return n;
+      }
+      return 1;
+    }
+
     function classifyChannel(o) {
       const name = (o.customer_name || "").trim();
+      if (isManualEntry(o)) return "Saisie manuelle";
       if (name.toUpperCase().startsWith("GLOVO")) return "Glovo";
-      if (name === "Salle (Caisse)") return "Salle (Caisse)";
-      if (name === "Comptoir (Caisse)") return "Comptoir (Caisse)";
+      if (name.startsWith("Salle (Caisse)")) return "Salle (Caisse)";
+      if (name.startsWith("Comptoir (Caisse)")) return "Comptoir (Caisse)";
       return "Site web / Autre";
     }
 
-    async function fetchPeriodOrders(since) {
-      const { data, error } = await supabase
+    async function fetchPeriodOrders(since, until) {
+      let q = supabase
         .from("orders")
         .select("id,order_type,customer_name,address_or_table,items,total,status,created_at")
-        .gte("created_at", since.toISOString())
-        .order("created_at", { ascending: true });
+        .gte("created_at", since.toISOString());
+      if (until) q = q.lte("created_at", until.toISOString());
+      const { data, error } = await q.order("created_at", { ascending: true });
       if (error) throw error;
       return data || [];
     }
@@ -537,27 +616,30 @@
       const byChannel = {};
       const byType = {};
       let revenue = 0;
+      let orderCount = 0;
 
       valid.forEach((o) => {
         const ch = classifyChannel(o);
         const ty = o.order_type || "autre";
         const amount = Number(o.total || 0);
+        const cnt = orderCountFor(o);
         revenue += amount;
+        orderCount += cnt;
         byChannel[ch] = byChannel[ch] || { count: 0, revenue: 0 };
-        byChannel[ch].count += 1;
+        byChannel[ch].count += cnt;
         byChannel[ch].revenue += amount;
         byType[ty] = byType[ty] || { count: 0, revenue: 0 };
-        byType[ty].count += 1;
+        byType[ty].count += cnt;
         byType[ty].revenue += amount;
       });
 
       return {
         since,
         until,
-        orderCount: valid.length,
+        orderCount,
         cancelledCount: cancelled.length,
         revenue,
-        avgBasket: valid.length ? revenue / valid.length : 0,
+        avgBasket: orderCount ? revenue / orderCount : 0,
         byChannel,
         byType,
         orders,
@@ -662,11 +744,29 @@
       document.getElementById("reportModal").classList.remove("show");
     }
 
+    function getRangeInputDates() {
+      const fromVal = document.getElementById("rangeFrom").value;
+      const toVal = document.getElementById("rangeTo").value;
+      const since = fromVal ? new Date(fromVal + "T00:00:00") : getPeriodStart();
+      const until = toVal ? new Date(toVal + "T23:59:59") : new Date();
+      return { since, until };
+    }
+
     async function runReport(kind) {
-      const since = getPeriodStart();
-      const until = new Date();
+      // Le Rapport Z clôture toujours depuis la dernière clôture jusqu'à
+      // maintenant (c'est ce qui donne son sens à la clôture de caisse).
+      // Le Rapport X (aperçu, ne clôture rien) utilise la période "Du / Au"
+      // choisie en haut de l'écran, ce qui permet par exemple de consulter
+      // tout le mois en cours, saisies manuelles comprises.
+      let since, until;
+      if (kind === "z") {
+        since = getPeriodStart();
+        until = new Date();
+      } else {
+        ({ since, until } = getRangeInputDates());
+      }
       try {
-        const orders = await fetchPeriodOrders(since);
+        const orders = await fetchPeriodOrders(since, until);
         const report = buildReport(orders, since, until);
         renderReportModal(report, kind);
       } catch (e) {
@@ -681,10 +781,10 @@
     }
 
     async function exportCsv() {
-      const since = getPeriodStart();
+      const { since, until } = getRangeInputDates();
       try {
-        const orders = await fetchPeriodOrders(since);
-        const header = ["Date", "Heure", "Canal", "Type", "Table / Adresse", "Articles", "Total (DH)", "Statut"];
+        const orders = await fetchPeriodOrders(since, until);
+        const header = ["Date", "Heure", "Canal", "Type", "Table / Adresse", "Articles", "Commandes", "Total (DH)", "Statut"];
         const rows = orders.map((o) => {
           const created = new Date(o.created_at);
           const itemsStr = Array.isArray(o.items)
@@ -697,6 +797,7 @@
             TYPE_LABELS[o.order_type] || o.order_type || "",
             o.address_or_table || "",
             itemsStr,
+            orderCountFor(o),
             Number(o.total || 0).toFixed(2),
             o.status || "",
           ];
@@ -718,6 +819,92 @@
       }
     }
 
+    // ---------------------------------------------------------------------
+    // Saisie manuelle : permet d'ajouter après coup un total de vente pour
+    // une date passée (ex. depuis le début du mois, avant la mise en place
+    // de la caisse), afin qu'il soit compté dans les rapports X/Z et
+    // l'export CSV. Enregistré comme une commande normale (statut
+    // "completed", donc invisible sur le Tableau en direct), mais reconnue
+    // comme "Saisie manuelle" dans les rapports grâce au préfixe du nom.
+    // ---------------------------------------------------------------------
+
+    function openManualModal() {
+      const now = new Date();
+      document.getElementById("manualDate").value = now.toISOString().slice(0, 10);
+      document.getElementById("manualTime").value = "12:00";
+      document.getElementById("manualChannel").value = "dinein";
+      document.getElementById("manualCount").value = 1;
+      document.getElementById("manualAmount").value = "";
+      document.getElementById("manualNote").value = "";
+      document.getElementById("manualModal").classList.add("show");
+    }
+
+    function closeManualModal() {
+      document.getElementById("manualModal").classList.remove("show");
+    }
+
+    const MANUAL_CHANNEL_LABELS = {
+      "dinein": "Salle",
+      "takeaway": "Comptoir",
+      "delivery-glovo": "Glovo",
+      "delivery-site": "Site web / Livraison",
+    };
+    const MANUAL_ORDER_TYPE = {
+      "dinein": "dinein",
+      "takeaway": "takeaway",
+      "delivery-glovo": "delivery",
+      "delivery-site": "delivery",
+    };
+
+    async function submitManualEntry() {
+      const dateVal = document.getElementById("manualDate").value;
+      const timeVal = document.getElementById("manualTime").value || "12:00";
+      const amount = parseFloat(document.getElementById("manualAmount").value);
+      const count = Math.max(1, parseInt(document.getElementById("manualCount").value, 10) || 1);
+      const channelSel = document.getElementById("manualChannel").value;
+      const note = document.getElementById("manualNote").value.trim();
+
+      if (!dateVal || isNaN(amount) || amount <= 0) {
+        showToast("Date et montant requis", true);
+        return;
+      }
+
+      const createdAt = new Date(`${dateVal}T${timeVal}:00`);
+      if (isNaN(createdAt.getTime())) {
+        showToast("Date invalide", true);
+        return;
+      }
+
+      const payload = {
+        order_type: MANUAL_ORDER_TYPE[channelSel] || "takeaway",
+        customer_name: "Saisie manuelle · " + (MANUAL_CHANNEL_LABELS[channelSel] || "Autre"),
+        customer_phone: "-",
+        address_or_table: null,
+        special_notes: note || null,
+        items: [{ name: note || "Saisie manuelle", quantity: 1, price: amount, manualCount: count }],
+        total: amount,
+        status: "completed",
+        created_at: createdAt.toISOString(),
+      };
+
+      const btn = document.getElementById("manualSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Ajout...";
+
+      const { error } = await supabasePublic.from("orders").insert(payload);
+
+      btn.disabled = false;
+      btn.textContent = "Ajouter";
+
+      if (error) {
+        showToast("Erreur : saisie non enregistrée", true);
+        return;
+      }
+
+      showToast("Saisie manuelle ajoutée");
+      closeManualModal();
+    }
+
     document.getElementById("chRestaurant").onclick = () => setChannel("restaurant");
     document.getElementById("chGlovo").onclick = () => setChannel("glovo");
     document.querySelectorAll(".type-btn").forEach((b) => {
@@ -728,13 +915,27 @@
     document.getElementById("btnReportX").onclick = () => runReport("x");
     document.getElementById("btnReportZ").onclick = () => runReport("z");
     document.getElementById("btnExportCsv").onclick = exportCsv;
+    document.getElementById("btnManualEntry").onclick = openManualModal;
+    document.getElementById("manualCancelBtn").onclick = closeManualModal;
+    document.getElementById("manualSubmitBtn").onclick = submitManualEntry;
     document.getElementById("reportModal").addEventListener("click", (e) => {
       if (e.target.id === "reportModal") closeReportModal();
     });
+    document.getElementById("manualModal").addEventListener("click", (e) => {
+      if (e.target.id === "manualModal") closeManualModal();
+    });
+
+    function setDefaultRange() {
+      const now = new Date();
+      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      document.getElementById("rangeFrom").value = firstOfMonth.toISOString().slice(0, 10);
+      document.getElementById("rangeTo").value = now.toISOString().slice(0, 10);
+    }
 
     (async function init() {
       const ok = await requireAuth();
       if (!ok) return;
+      setDefaultRange();
       await loadDishes();
       renderCart();
     })();
