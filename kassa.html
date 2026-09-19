@@ -407,7 +407,13 @@
         status: "pending",
       };
 
-      const { data, error } = await supabasePublic.from("orders").insert(payload).select().single();
+      // Note: intentionally NOT chaining .select() here. Asking PostgREST to
+      // return the inserted row (Prefer: return=representation) requires a
+      // SELECT policy for the "anon" role, which this project's RLS setup
+      // does not grant (by design, so the public can't read all orders).
+      // Without .select(), only the insert's own WITH CHECK policy applies,
+      // which does allow anon inserts — so this succeeds.
+      const { error } = await supabasePublic.from("orders").insert(payload);
 
       btn.textContent = "Envoyer la commande";
       btn.disabled = cart.length === 0;
@@ -420,8 +426,9 @@
       showToast("Commande envoyée !");
 
       if (document.getElementById("printToggle").checked && window.printOrder) {
+        const localRef = Date.now().toString().slice(-6);
         window.printOrder({
-          id: data.id ? String(data.id).slice(0, 8) : "",
+          id: localRef,
           table: addressOrTable || "",
           items: items.map((it) => ({ name: it.name, qty: it.quantity, price: it.price })),
           total,
